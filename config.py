@@ -33,7 +33,7 @@ DATASET = 'PASCAL_VOC'
 DEVICE = get_device()
 ACTIVATION = 'relu'
 seed_everything()  # If you want deterministic behavior
-NUM_WORKERS = min(os.cpu_count() - 1, 4)
+NUM_WORKERS = min(os.cpu_count(), 4)
 BATCH_SIZE = 8
 IMAGE_SIZE = 416
 MULTIRES = [416, 832]
