@@ -13,13 +13,14 @@ from utils import ResizeDataLoader
 
 class Model(LightningModule):
     def __init__(self, in_channels=3, num_classes=config.NUM_CLASSES, batch_size=config.BATCH_SIZE,
-                 learning_rate=config.LEARNING_RATE, enable_gc='batch'):
+                 learning_rate=config.LEARNING_RATE, enable_gc='batch', num_epochs=config.NUM_EPOCHS):
         super(Model, self).__init__()
         self.network = YOLOv3(in_channels, num_classes)
         self.criterion = YoloLoss()
         self.batch_size = batch_size
         self.learning_rate = learning_rate
         self.enable_gc = enable_gc
+        self.num_epochs = num_epochs
 
         # self.scaled_anchors = config.SCALED_ANCHORS
         self.register_buffer("scaled_anchors", config.SCALED_ANCHORS)
@@ -57,8 +58,8 @@ class Model(LightningModule):
             optimizer,
             max_lr=self.learning_rate,
             steps_per_epoch=len(self.train_dataloader()),
-            epochs=config.NUM_EPOCHS,
-            pct_start=5/config.NUM_EPOCHS,
+            epochs=self.num_epochs,
+            pct_start=5/self.num_epochs,
             div_factor=100,
             three_phase=False,
             final_div_factor=100,
