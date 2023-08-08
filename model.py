@@ -13,7 +13,7 @@ from utils import ResizeDataLoader
 
 class Model(LightningModule):
     def __init__(self, in_channels=3, num_classes=config.NUM_CLASSES, batch_size=config.BATCH_SIZE,
-                 learning_rate=config.LEARNING_RATE, enable_gc='epoch'):
+                 learning_rate=config.LEARNING_RATE, enable_gc='batch'):
         super(Model, self).__init__()
         self.network = YOLOv3(in_channels, num_classes)
         self.criterion = YoloLoss(config.SCALED_ANCHORS)
