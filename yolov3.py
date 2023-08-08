@@ -7,7 +7,6 @@ import torch.nn as nn
 
 import config as cfgfile
 
-
 """ 
 Information about architecture config:
 Tuple is structured by (filters, kernel_size, stride) 
@@ -53,23 +52,23 @@ class CNNBlock(nn.Module):
         elif atype == 'relu':
             return nn.ReLU()
 
-    def __init__(self, in_channels, out_channels, kernel_size, padding=0, act=cfgfile.ACTIVATION, bn_act=True,
-                 dws=False, **kwargs):
-        super().__init__()
+    def __init__(self, in_channels, out_channels, kernel_size, padding=0, stride=1, act=cfgfile.ACTIVATION, bn_act=True,
+                 dws=False):
+        super(CNNBlock, self).__init__()
 
         bias = not bn_act
         layer_list = list()
 
-        if dws and kernel_size == 3:
+        if dws and out_channels % in_channels == 0 and kernel_size == 3:
             layer_list.append(nn.Conv2d(in_channels, out_channels, kernel_size, bias=bias, groups=in_channels,
-                                        padding=padding, padding_mode='replicate', **kwargs))
+                                        padding=padding, stride=stride, padding_mode='replicate'))
             if bn_act:
                 layer_list.append(nn.BatchNorm2d(out_channels))
                 layer_list.append(self.get_act(act))
-            layer_list.append(nn.Conv2d(out_channels, out_channels, kernel_size=1, bias=bias, padding=0, **kwargs))
+            layer_list.append(nn.Conv2d(out_channels, out_channels, kernel_size=1, bias=bias, padding=0, stride=1))
         else:
             layer_list.append(nn.Conv2d(in_channels, out_channels, kernel_size, bias=bias, padding=padding,
-                                        padding_mode='replicate', **kwargs))
+                                        stride=stride, padding_mode='replicate'))
 
         if bn_act:
             layer_list.append(nn.BatchNorm2d(out_channels))
@@ -83,7 +82,7 @@ class CNNBlock(nn.Module):
 
 class ResidualBlock(nn.Module):
     def __init__(self, channels, use_residual=True, num_repeats=1, dws=False):
-        super().__init__()
+        super(ResidualBlock, self).__init__()
         self.layers = nn.ModuleList()
         for repeat in range(num_repeats):
             self.layers += [
@@ -106,7 +105,7 @@ class ResidualBlock(nn.Module):
 
 class ScalePrediction(nn.Module):
     def __init__(self, in_channels, num_classes, rep):
-        super().__init__()
+        super(ScalePrediction, self).__init__()
         self.pred = nn.Sequential(
             CNNBlock(in_channels, 2 * in_channels, 3, padding=1),
             CNNBlock(2 * in_channels, (num_classes + 5) * 3, 1, bn_act=False),
@@ -122,7 +121,7 @@ class ScalePrediction(nn.Module):
 
 class YOLOv3(nn.Module):
     def __init__(self, in_channels=3, num_classes=80):
-        super().__init__()
+        super(YOLOv3, self).__init__()
         self.num_classes = num_classes
         self.in_channels = in_channels
         self.layers = self._create_conv_layers()
@@ -179,6 +178,6 @@ class YOLOv3(nn.Module):
                     in_channels = in_channels // 2
 
                 elif module == "U":
-                    layers.append(nn.Upsample(scale_factor=2),)
+                    layers.append(nn.Upsample(scale_factor=2))
                     in_channels = in_channels * 3
         return layers
