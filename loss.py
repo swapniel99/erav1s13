@@ -79,10 +79,11 @@ class YoloLoss(LightningModule):
     def __init__(self, scaled_anchors):
         super(YoloLoss, self).__init__()
         self.scaled_anchors = scaled_anchors
+        self.yolo_single = YoloLossSingle()
 
     def forward(self, predictions, target):
-        yolo_single = YoloLossSingle()
         combined_loss = 0
         for i in range(len(target)):
-            combined_loss += yolo_single(predictions[i], target[i], self.scaled_anchors[i])
+            combined_loss += self.yolo_single(predictions[i].to(self.device), target[i].to(self.device),
+                                              self.scaled_anchors[i])
         return combined_loss
