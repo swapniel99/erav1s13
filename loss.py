@@ -25,6 +25,7 @@ class YoloLossSingle(LightningModule):
         self.lambda_box = 10
 
     def calculate(self, predictions, target, anchors):
+        predictions, target, anchors = predictions.to(self.device), target.to(self.device), anchors.to(self.device)
         print(predictions.device, target.device, anchors.device)
         # Check where obj and noobj (we ignore if target == -1)
         obj = target[..., 0] == 1  # in paper this is Iobj_i
