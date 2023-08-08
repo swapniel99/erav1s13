@@ -16,10 +16,12 @@ class Model(LightningModule):
                  learning_rate=config.LEARNING_RATE, enable_gc='batch'):
         super(Model, self).__init__()
         self.network = YOLOv3(in_channels, num_classes)
-        self.criterion = YoloLoss(config.SCALED_ANCHORS)
+        self.criterion = YoloLoss()
         self.batch_size = batch_size
         self.learning_rate = learning_rate
         self.enable_gc = enable_gc
+
+        self.register_buffer("scaled_anchors", config.SCALED_ANCHORS)
 
     def forward(self, x):
         return self.network(x)
@@ -27,13 +29,13 @@ class Model(LightningModule):
     def common_step(self, batch):
         x, y = batch
         out = self.forward(x)
-        loss = self.criterion(out, y)
+        loss = self.criterion(out, y, self.scaled_anchors)
         del out, x, y
         return loss
 
     def training_step(self, batch, batch_idx):
         loss = self.common_step(batch)
-        self.log(f"train_loss", loss, on_epoch=True, prog_bar=True, logger=True, sync_dist=False)
+        self.log(f"train_loss", loss, on_epoch=True, prog_bar=True, logger=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
