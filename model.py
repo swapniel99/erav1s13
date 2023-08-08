@@ -1,6 +1,6 @@
 import torch
 from pytorch_lightning import LightningModule
-# from pytorch_lightning.utilities.memory import garbage_collection_cuda
+from pytorch_lightning.utilities.memory import garbage_collection_cuda
 from yolov3 import YOLOv3
 from dataset import YOLODataset
 from loss import YoloLoss
@@ -131,17 +131,17 @@ class Model(LightningModule):
     def predict_dataloader(self):
         return self.test_dataloader()
 
-    # def on_train_batch_end(self, outputs, batch, batch_idx):
-    #     garbage_collection_cuda()
-    #
-    # def on_test_batch_end(self, outputs, batch, batch_idx, dataloader_idx=0):
-    #     garbage_collection_cuda()
-    #
-    # def on_validation_batch_end(self, outputs, batch, batch_idx, dataloader_idx=0):
-    #     garbage_collection_cuda()
-    #
-    # def on_predict_batch_end(self, outputs, batch, batch_idx, dataloader_idx=0):
-    #     garbage_collection_cuda()
+    def on_train_batch_end(self, outputs, batch, batch_idx):
+        garbage_collection_cuda()
+
+    def on_test_batch_end(self, outputs, batch, batch_idx, dataloader_idx=0):
+        garbage_collection_cuda()
+
+    def on_validation_batch_end(self, outputs, batch, batch_idx, dataloader_idx=0):
+        garbage_collection_cuda()
+
+    def on_predict_batch_end(self, outputs, batch, batch_idx, dataloader_idx=0):
+        garbage_collection_cuda()
 
 
 def main():
