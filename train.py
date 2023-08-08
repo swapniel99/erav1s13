@@ -24,24 +24,16 @@ warnings.filterwarnings("ignore")
 # torch.backends.cudnn.benchmark = True
 
 
-def train_fn(train_loader, model, optimizer, loss_fn, scaler, scaled_anchors):
+def train_fn(train_loader, model, optimizer, loss_fn, scaler):
     loop = tqdm(train_loader, leave=True)
     losses = []
     for batch_idx, (x, y) in enumerate(loop):
         x = x.to(config.DEVICE)
-        y0, y1, y2 = (
-            y[0].to(config.DEVICE),
-            y[1].to(config.DEVICE),
-            y[2].to(config.DEVICE),
-        )
+        y = (y[0].to(config.DEVICE), y[1].to(config.DEVICE), y[2].to(config.DEVICE))
 
         with torch.cuda.amp.autocast():
             out = model(x)
-            loss = (
-                loss_fn(out[0], y0, scaled_anchors[0])
-                + loss_fn(out[1], y1, scaled_anchors[1])
-                + loss_fn(out[2], y2, scaled_anchors[2])
-            )
+            loss = loss_fn(out, y)
 
         losses.append(loss.item())
         optimizer.zero_grad()
@@ -49,17 +41,12 @@ def train_fn(train_loader, model, optimizer, loss_fn, scaler, scaled_anchors):
         scaler.step(optimizer)
         scaler.update()
 
-        # update progress bar
-        mean_loss = sum(losses) / len(losses)
-        loop.set_postfix(loss=mean_loss)
-
 
 def main():
     model = YOLOv3(num_classes=config.NUM_CLASSES).to(config.DEVICE)
     optimizer = optim.Adam(
         model.parameters(), lr=config.LEARNING_RATE, weight_decay=config.WEIGHT_DECAY
     )
-    loss_fn = YoloLoss()
     scaler = torch.cuda.amp.GradScaler()
 
     train_loader, test_loader, train_eval_loader = get_loaders(
@@ -75,10 +62,11 @@ def main():
         torch.tensor(config.ANCHORS)
         * torch.tensor(config.S).unsqueeze(1).unsqueeze(1).repeat(1, 3, 2)
     ).to(config.DEVICE)
+    loss_fn = YoloLoss(scaled_anchors=scaled_anchors)
 
     for epoch in range(config.NUM_EPOCHS):
         #plot_couple_examples(model, test_loader, 0.6, 0.5, scaled_anchors)
-        train_fn(train_loader, model, optimizer, loss_fn, scaler, scaled_anchors)
+        train_fn(train_loader, model, optimizer, loss_fn, scaler)
 
         #if config.SAVE_MODEL:
         #    save_checkpoint(model, optimizer, filename=f"checkpoint.pth.tar")
