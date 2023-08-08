@@ -24,21 +24,22 @@ class Model(LightningModule):
     def forward(self, x):
         return self.network(x)
 
-    def common_step(self, batch, mode):
+    def common_step(self, batch):
         x, y = batch
         out = self.forward(x)
         loss = self.criterion(out, y)
         del out, x, y
-
-        self.log(f"{mode}_loss", loss, on_epoch=True, prog_bar=True, logger=True)
-
         return loss
 
     def training_step(self, batch, batch_idx):
-        return self.common_step(batch, 'train')
+        loss = self.common_step(batch)
+        self.log(f"train_loss", loss, on_epoch=True, prog_bar=True, logger=True, sync_dist=False)
+        return loss
 
     def validation_step(self, batch, batch_idx):
-        return self.common_step(batch, 'val')
+        loss = self.common_step(batch)
+        self.log(f"val_loss", loss, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
+        return loss
 
     def predict_step(self, batch, batch_idx, dataloader_idx=0):
         if isinstance(batch, (tuple, list)):
@@ -90,25 +91,6 @@ class Model(LightningModule):
 
         return train_loader
 
-    def test_dataloader(self):
-        test_dataset = YOLODataset(
-            config.DATASET + '/test.csv',
-            transform=config.test_transforms,
-            img_dir=config.IMG_DIR,
-            label_dir=config.LABEL_DIR,
-            anchors=config.ANCHORS,
-            mosaic=0
-        )
-
-        test_loader = DataLoader(
-            dataset=test_dataset,
-            batch_size=self.batch_size,
-            num_workers=config.NUM_WORKERS,
-            pin_memory=config.PIN_MEMORY,
-            shuffle=False,
-        )
-        return test_loader
-
     def val_dataloader(self):
         train_eval_dataset = YOLODataset(
             config.DATASET + '/train.csv',
@@ -130,13 +112,25 @@ class Model(LightningModule):
         return train_eval_loader
 
     def predict_dataloader(self):
-        return self.test_dataloader()
+        test_dataset = YOLODataset(
+            config.DATASET + '/test.csv',
+            transform=config.test_transforms,
+            img_dir=config.IMG_DIR,
+            label_dir=config.LABEL_DIR,
+            anchors=config.ANCHORS,
+            mosaic=0
+        )
+
+        test_loader = DataLoader(
+            dataset=test_dataset,
+            batch_size=self.batch_size,
+            num_workers=config.NUM_WORKERS,
+            pin_memory=config.PIN_MEMORY,
+            shuffle=False,
+        )
+        return test_loader
 
     def on_train_batch_end(self, outputs, batch, batch_idx):
-        if self.enable_gc == 'batch':
-            garbage_collection_cuda()
-
-    def on_test_batch_end(self, outputs, batch, batch_idx, dataloader_idx=0):
         if self.enable_gc == 'batch':
             garbage_collection_cuda()
 
