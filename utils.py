@@ -5,7 +5,6 @@ import numpy as np
 import torch
 import random
 from torchvision.transforms import Resize
-from torch_lr_finder import LRFinder
 from collections import Counter
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -618,6 +617,7 @@ def clip_boxes(boxes, shape):
 
 
 def find_lr(model, data_loader, optimizer, criterion, device=config.DEVICE):
+    from torch_lr_finder import LRFinder
     lr_finder = LRFinder(model, optimizer, criterion, device=device)
     lr_finder.range_test(data_loader, end_lr=0.1, num_iter=100, step_mode='exp')
     _, best_lr = lr_finder.plot()
