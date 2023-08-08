@@ -30,7 +30,7 @@ class Model(LightningModule):
     def common_step(self, batch):
         x, y = batch
         out = self.forward(x)
-        loss = self.criterion(out, y, self.scaled_anchors.to(self.device))
+        loss = self.criterion(out, y, self.scaled_anchors)
         del out, x, y
         return loss
 
