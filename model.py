@@ -26,10 +26,7 @@ class Model(LightningModule):
         loss = self.criterion(out, y)
         del out, x, y
 
-        mean_loss = sum(loss) / len(loss)
-
         self.log(f"{mode}_loss", loss, on_epoch=True, prog_bar=True, logger=True)
-        self.log(f"{mode}_mean_loss", mean_loss, on_epoch=True, prog_bar=True, logger=True)
 
         return loss
 
