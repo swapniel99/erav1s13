@@ -48,7 +48,7 @@ class Model(LightningModule):
         return self.forward(x)
 
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=self.learning_rate, weight_decay=config.WEIGHT_DECAY)
+        optimizer = optim.Adam(self.parameters(), lr=self.learning_rate/100, weight_decay=config.WEIGHT_DECAY)
         scheduler = optim.lr_scheduler.OneCycleLR(
             optimizer,
             max_lr=self.learning_rate,
