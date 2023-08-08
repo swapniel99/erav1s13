@@ -1,21 +1,24 @@
 import torch
 from pytorch_lightning import LightningModule
-from pytorch_lightning.utilities.memory import garbage_collection_cuda
+# from pytorch_lightning.utilities.memory import garbage_collection_cuda
 from yolov3 import YOLOv3
 from dataset import YOLODataset
 from loss import YoloLoss
 from torch import optim
 from torch.utils.data import DataLoader
+
 import config
-from utils import find_lr, ResizeDataLoader
+from utils import ResizeDataLoader
 
 
 class Model(LightningModule):
-    def __init__(self, in_channels=3, num_classes=config.NUM_CLASSES, batch_size=config.BATCH_SIZE):
+    def __init__(self, in_channels=3, num_classes=config.NUM_CLASSES, batch_size=config.BATCH_SIZE,
+                 learning_rate=config.LEARNING_RATE):
         super(Model, self).__init__()
         self.network = YOLOv3(in_channels, num_classes)
         self.criterion = YoloLoss(config.SCALED_ANCHORS)
         self.batch_size = batch_size
+        self.learning_rate = learning_rate
 
     def forward(self, x):
         return self.network(x)
@@ -44,14 +47,11 @@ class Model(LightningModule):
         return self.forward(x)
 
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=config.LEARNING_RATE, weight_decay=config.WEIGHT_DECAY)
-        train_loader = self.train_dataloader()
-        best_lr = find_lr(self, train_loader, optimizer, self.criterion, self.device)
-        garbage_collection_cuda()
+        optimizer = optim.Adam(self.parameters(), lr=self.learning_rate, weight_decay=config.WEIGHT_DECAY)
         scheduler = optim.lr_scheduler.OneCycleLR(
             optimizer,
-            max_lr=best_lr,
-            steps_per_epoch=len(train_loader),
+            max_lr=self.learning_rate,
+            steps_per_epoch=len(self.train_dataloader()),
             epochs=config.NUM_EPOCHS,
             pct_start=5/config.NUM_EPOCHS,
             div_factor=100,
@@ -131,17 +131,17 @@ class Model(LightningModule):
     def predict_dataloader(self):
         return self.test_dataloader()
 
-    def on_train_batch_end(self, outputs, batch, batch_idx):
-        garbage_collection_cuda()
-
-    def on_test_batch_end(self, outputs, batch, batch_idx, dataloader_idx=0):
-        garbage_collection_cuda()
-
-    def on_validation_batch_end(self, outputs, batch, batch_idx, dataloader_idx=0):
-        garbage_collection_cuda()
-
-    def on_predict_batch_end(self, outputs, batch, batch_idx, dataloader_idx=0):
-        garbage_collection_cuda()
+    # def on_train_batch_end(self, outputs, batch, batch_idx):
+    #     garbage_collection_cuda()
+    #
+    # def on_test_batch_end(self, outputs, batch, batch_idx, dataloader_idx=0):
+    #     garbage_collection_cuda()
+    #
+    # def on_validation_batch_end(self, outputs, batch, batch_idx, dataloader_idx=0):
+    #     garbage_collection_cuda()
+    #
+    # def on_predict_batch_end(self, outputs, batch, batch_idx, dataloader_idx=0):
+    #     garbage_collection_cuda()
 
 
 def main():
