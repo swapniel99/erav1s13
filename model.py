@@ -21,7 +21,8 @@ class Model(LightningModule):
         self.learning_rate = learning_rate
         self.enable_gc = enable_gc
 
-        self.register_buffer("scaled_anchors", config.SCALED_ANCHORS)
+        self.scaled_anchors = config.SCALED_ANCHORS
+        # self.register_buffer("scaled_anchors", config.SCALED_ANCHORS)
 
     def forward(self, x):
         return self.network(x)
@@ -29,7 +30,7 @@ class Model(LightningModule):
     def common_step(self, batch):
         x, y = batch
         out = self.forward(x)
-        loss = self.criterion(out, y, self.scaled_anchors)
+        loss = self.criterion(out, y, self.scaled_anchors.to(self.device))
         del out, x, y
         return loss
 
