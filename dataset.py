@@ -174,13 +174,12 @@ def test():
         anchors=anchors,
         transform=transform,
     )
-    S = [13, 26, 52]
-    scaled_anchors = torch.tensor(anchors) / (1 / torch.tensor(S).unsqueeze(1).unsqueeze(1).repeat(1, 3, 2))
-    loader = ResizeDataLoader(dataset=dataset, batch_size=1, shuffle=True, resolutions=config.MULTIRES,
+    scaled_anchors = config.SCALED_ANCHORS
+    loader = ResizeDataLoader(dataset=dataset, batch_size=2, shuffle=True, resolutions=config.MULTIRES,
                               cum_weights=config.CUM_PROBS)
     for x, y in itertools.islice(loader, 10):
         boxes = []
-        print(type(y), len(y), y[0].shape, y[1].shape, y[2].shape)
+        # print(type(y), len(y), y[0].shape, y[1].shape, y[2].shape)
         for i in range(y[0].shape[1]):
             anchor = scaled_anchors[i]
             # print(anchor.shape)
@@ -189,6 +188,7 @@ def test():
                 y[i], is_preds=False, S=y[i].shape[2], anchors=anchor
             )[0]
         boxes = nms(boxes, iou_threshold=1, threshold=0.7, box_format="midpoint")
+        # print(type(boxes), len(boxes))
         plot_image(show_transform(x[0]).to("cpu"), boxes)
 
 

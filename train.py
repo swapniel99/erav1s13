@@ -58,10 +58,7 @@ def main():
             config.CHECKPOINT_FILE, model, optimizer, config.LEARNING_RATE
         )
 
-    scaled_anchors = (
-        torch.tensor(config.ANCHORS)
-        * torch.tensor(config.S).unsqueeze(1).unsqueeze(1).repeat(1, 3, 2)
-    ).to(config.DEVICE)
+    scaled_anchors = config.SCALED_ANCHORS.to(config.DEVICE)
     loss_fn = YoloLoss(scaled_anchors=scaled_anchors)
 
     for epoch in range(config.NUM_EPOCHS):

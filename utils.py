@@ -476,68 +476,68 @@ class ResizeDataLoader(DataLoader):
             yield x, y
 
 
-# def get_loaders():
-#     from dataset import YOLODataset
-#
-#     IMAGE_SIZE = config.IMAGE_SIZE
-#
-#     train_dataset = YOLODataset(
-#         config.DATASET + '/train.csv',
-#         transform=config.train_transforms,
-#         S=[IMAGE_SIZE // 32, IMAGE_SIZE // 16, IMAGE_SIZE // 8],
-#         img_dir=config.IMG_DIR,
-#         label_dir=config.LABEL_DIR,
-#         anchors=config.ANCHORS,
-#         mosaic=0.75
-#     )
-#
-#     test_dataset = YOLODataset(
-#         config.DATASET + '/test.csv',
-#         transform=config.test_transforms,
-#         S=[IMAGE_SIZE // 32, IMAGE_SIZE // 16, IMAGE_SIZE // 8],
-#         img_dir=config.IMG_DIR,
-#         label_dir=config.LABEL_DIR,
-#         anchors=config.ANCHORS,
-#         mosaic=0
-#     )
-#
-#     train_loader = ResizeDataLoader(
-#         dataset=train_dataset,
-#         batch_size=config.BATCH_SIZE,
-#         num_workers=config.NUM_WORKERS,
-#         pin_memory=config.PIN_MEMORY,
-#         shuffle=True,
-#         resolutions=config.MULTIRES,
-#         cum_weights=config.CUM_PROBS
-#     )
-#
-#     test_loader = DataLoader(
-#         dataset=test_dataset,
-#         batch_size=config.BATCH_SIZE,
-#         num_workers=config.NUM_WORKERS,
-#         pin_memory=config.PIN_MEMORY,
-#         shuffle=False,
-#     )
-#
-#     train_eval_dataset = YOLODataset(
-#         config.DATASET + '/train.csv',
-#         transform=config.test_transforms,
-#         S=[IMAGE_SIZE // 32, IMAGE_SIZE // 16, IMAGE_SIZE // 8],
-#         img_dir=config.IMG_DIR,
-#         label_dir=config.LABEL_DIR,
-#         anchors=config.ANCHORS,
-#         mosaic=0
-#     )
-#
-#     train_eval_loader = DataLoader(
-#         dataset=train_eval_dataset,
-#         batch_size=config.BATCH_SIZE,
-#         num_workers=config.NUM_WORKERS,
-#         pin_memory=config.PIN_MEMORY,
-#         shuffle=False
-#     )
-#
-#     return train_loader, test_loader, train_eval_loader
+def get_loaders():
+    from dataset import YOLODataset
+
+    IMAGE_SIZE = config.IMAGE_SIZE
+
+    train_dataset = YOLODataset(
+        config.DATASET + '/train.csv',
+        transform=config.train_transforms,
+        S=[IMAGE_SIZE // 32, IMAGE_SIZE // 16, IMAGE_SIZE // 8],
+        img_dir=config.IMG_DIR,
+        label_dir=config.LABEL_DIR,
+        anchors=config.ANCHORS,
+        mosaic=0.75
+    )
+
+    test_dataset = YOLODataset(
+        config.DATASET + '/test.csv',
+        transform=config.test_transforms,
+        S=[IMAGE_SIZE // 32, IMAGE_SIZE // 16, IMAGE_SIZE // 8],
+        img_dir=config.IMG_DIR,
+        label_dir=config.LABEL_DIR,
+        anchors=config.ANCHORS,
+        mosaic=0
+    )
+
+    train_loader = ResizeDataLoader(
+        dataset=train_dataset,
+        batch_size=config.BATCH_SIZE,
+        num_workers=config.NUM_WORKERS,
+        pin_memory=config.PIN_MEMORY,
+        shuffle=True,
+        resolutions=config.MULTIRES,
+        cum_weights=config.CUM_PROBS
+    )
+
+    test_loader = DataLoader(
+        dataset=test_dataset,
+        batch_size=config.BATCH_SIZE,
+        num_workers=config.NUM_WORKERS,
+        pin_memory=config.PIN_MEMORY,
+        shuffle=False,
+    )
+
+    train_eval_dataset = YOLODataset(
+        config.DATASET + '/train.csv',
+        transform=config.test_transforms,
+        S=[IMAGE_SIZE // 32, IMAGE_SIZE // 16, IMAGE_SIZE // 8],
+        img_dir=config.IMG_DIR,
+        label_dir=config.LABEL_DIR,
+        anchors=config.ANCHORS,
+        mosaic=0
+    )
+
+    train_eval_loader = DataLoader(
+        dataset=train_eval_dataset,
+        batch_size=config.BATCH_SIZE,
+        num_workers=config.NUM_WORKERS,
+        pin_memory=config.PIN_MEMORY,
+        shuffle=False
+    )
+
+    return train_loader, test_loader, train_eval_loader
 
 
 def plot_couple_examples(model, loader, thresh, iou_thresh, anchors):

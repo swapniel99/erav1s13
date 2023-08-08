@@ -14,7 +14,7 @@ def seed_everything(seed=42):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
-    torch.backends.cudnn.deterministic = True
+    # torch.backends.cudnn.deterministic = True
     # torch.backends.cudnn.benchmark = False
 
 
@@ -33,7 +33,7 @@ DATASET = 'PASCAL_VOC'
 DEVICE = get_device()
 ACTIVATION = 'relu'
 seed_everything()  # If you want deterministic behavior
-NUM_WORKERS = os.cpu_count()
+NUM_WORKERS = min(os.cpu_count(), 4)
 BATCH_SIZE = 32
 IMAGE_SIZE = 416
 MULTIRES = [416, 832]
@@ -59,6 +59,10 @@ ANCHORS = [
     [(0.07, 0.15), (0.15, 0.11), (0.14, 0.29)],
     [(0.02, 0.03), (0.04, 0.07), (0.08, 0.06)],
 ]  # Note these have been rescaled to be between [0, 1]
+
+SCALED_ANCHORS = (
+    torch.tensor(ANCHORS) * torch.tensor(S).unsqueeze(1).unsqueeze(1).repeat(1, 3, 2)
+)
 
 mean = [0.485, 0.456, 0.406]
 std = [0.229, 0.224, 0.225]

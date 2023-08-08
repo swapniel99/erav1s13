@@ -1,11 +1,11 @@
 import torch
 from pytorch_lightning import LightningModule
+from pytorch_lightning.utilities.memory import garbage_collection_cuda
 from yolov3 import YOLOv3
 from dataset import YOLODataset
 from loss import YoloLoss
 from torch import optim
 from torch.utils.data import DataLoader
-
 import config
 from utils import find_lr, ResizeDataLoader
 
@@ -14,23 +14,17 @@ class Model(LightningModule):
     def __init__(self, in_channels=3, num_classes=20):
         super(Model, self).__init__()
         self.network = YOLOv3(in_channels, num_classes)
-        self.scaled_anchors = (
-                torch.tensor(config.ANCHORS)
-                * torch.tensor(config.S).unsqueeze(1).unsqueeze(1).repeat(1, 3, 2)
-        )
-        self.criterion = YoloLoss(self.scaled_anchors)
+        self.criterion = YoloLoss(config.SCALED_ANCHORS)
         self.batch_size = config.BATCH_SIZE
 
     def forward(self, x):
         return self.network(x)
 
-    def backward(self, loss, *a, **k):
-        super().backward(loss *a, **k)
-
     def common_step(self, batch, mode):
         x, y = batch
         out = self.forward(x)
         loss = self.criterion(out, y)
+        del out, x, y
 
         mean_loss = sum(loss) / len(loss)
 
@@ -46,7 +40,7 @@ class Model(LightningModule):
         return self.common_step(batch, 'val')
 
     def predict_step(self, batch, batch_idx, dataloader_idx=0):
-        if isinstance(batch, list):
+        if isinstance(batch, (tuple, list)):
             x, _ = batch
         else:
             x = batch
@@ -137,6 +131,18 @@ class Model(LightningModule):
 
     def predict_dataloader(self):
         return self.test_dataloader()
+
+    def on_train_batch_end(self, outputs, batch, batch_idx):
+        garbage_collection_cuda()
+
+    def on_test_batch_end(self, outputs, batch, batch_idx, dataloader_idx=0):
+        garbage_collection_cuda()
+
+    def on_validation_batch_end(self, outputs, batch, batch_idx, dataloader_idx=0):
+        garbage_collection_cuda()
+
+    def on_predict_batch_end(self, outputs, batch, batch_idx, dataloader_idx=0):
+        garbage_collection_cuda()
 
 
 def main():
