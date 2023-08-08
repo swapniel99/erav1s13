@@ -13,12 +13,13 @@ from utils import ResizeDataLoader
 
 class Model(LightningModule):
     def __init__(self, in_channels=3, num_classes=config.NUM_CLASSES, batch_size=config.BATCH_SIZE,
-                 learning_rate=config.LEARNING_RATE):
+                 learning_rate=config.LEARNING_RATE, enable_gc='epoch'):
         super(Model, self).__init__()
         self.network = YOLOv3(in_channels, num_classes)
         self.criterion = YoloLoss(config.SCALED_ANCHORS)
         self.batch_size = batch_size
         self.learning_rate = learning_rate
+        self.enable_gc = enable_gc
 
     def forward(self, x):
         return self.network(x)
@@ -132,16 +133,24 @@ class Model(LightningModule):
         return self.test_dataloader()
 
     def on_train_batch_end(self, outputs, batch, batch_idx):
-        garbage_collection_cuda()
+        if self.enable_gc == 'batch':
+            garbage_collection_cuda()
 
     def on_test_batch_end(self, outputs, batch, batch_idx, dataloader_idx=0):
-        garbage_collection_cuda()
+        if self.enable_gc == 'batch':
+            garbage_collection_cuda()
 
     def on_validation_batch_end(self, outputs, batch, batch_idx, dataloader_idx=0):
-        garbage_collection_cuda()
+        if self.enable_gc == 'batch':
+            garbage_collection_cuda()
 
     def on_predict_batch_end(self, outputs, batch, batch_idx, dataloader_idx=0):
-        garbage_collection_cuda()
+        if self.enable_gc == 'batch':
+            garbage_collection_cuda()
+
+    def on_train_epoch_end(self):
+        if self.enable_gc == 'epoch':
+            garbage_collection_cuda()
 
 
 def main():
