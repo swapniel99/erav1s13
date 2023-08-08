@@ -6,10 +6,11 @@ instead of BinaryCrossEntropy.
 
 import torch
 import torch.nn as nn
+from pytorch_lightning import LightningModule
 from utils import intersection_over_union
 
 
-class YoloLossSingle(nn.Module):
+class YoloLossSingle(LightningModule):
     def __init__(self):
         super(YoloLossSingle, self).__init__()
         self.mse = nn.MSELoss()
@@ -74,7 +75,7 @@ class YoloLossSingle(nn.Module):
         return self.calculate(predictions, target, anchors)
 
 
-class YoloLoss(nn.Module):
+class YoloLoss(LightningModule):
     def __init__(self, scaled_anchors):
         super(YoloLoss, self).__init__()
         self.scaled_anchors = scaled_anchors
