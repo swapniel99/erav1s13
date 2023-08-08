@@ -72,8 +72,8 @@ class YoloLossSingle(LightningModule):
         )
 
     def forward(self, predictions, target, anchors):
-        return self.calculate(predictions.to(self.device), target.to(self.device), anchors.to(self.device))
-        # return self.calculate(predictions, target, anchors)
+        # return self.calculate(predictions.to(self.device), target.to(self.device), anchors.to(self.device))
+        return self.calculate(predictions, target, anchors)
 
 
 class YoloLoss(LightningModule):

@@ -21,8 +21,8 @@ class Model(LightningModule):
         self.learning_rate = learning_rate
         self.enable_gc = enable_gc
 
-        self.scaled_anchors = config.SCALED_ANCHORS
-        # self.register_buffer("scaled_anchors", config.SCALED_ANCHORS)
+        # self.scaled_anchors = config.SCALED_ANCHORS
+        self.register_buffer("scaled_anchors", config.SCALED_ANCHORS)
 
     def forward(self, x):
         return self.network(x)
