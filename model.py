@@ -11,11 +11,11 @@ from utils import find_lr, ResizeDataLoader
 
 
 class Model(LightningModule):
-    def __init__(self, in_channels=3, num_classes=20):
+    def __init__(self, in_channels=3, num_classes=config.NUM_CLASSES, batch_size=config.BATCH_SIZE):
         super(Model, self).__init__()
         self.network = YOLOv3(in_channels, num_classes)
         self.criterion = YoloLoss(config.SCALED_ANCHORS)
-        self.batch_size = config.BATCH_SIZE
+        self.batch_size = batch_size
 
     def forward(self, x):
         return self.network(x)
@@ -102,7 +102,7 @@ class Model(LightningModule):
 
         test_loader = DataLoader(
             dataset=test_dataset,
-            batch_size=config.BATCH_SIZE,
+            batch_size=self.batch_size,
             num_workers=config.NUM_WORKERS,
             pin_memory=config.PIN_MEMORY,
             shuffle=False,
@@ -121,7 +121,7 @@ class Model(LightningModule):
 
         train_eval_loader = DataLoader(
             dataset=train_eval_dataset,
-            batch_size=config.BATCH_SIZE,
+            batch_size=self.batch_size,
             num_workers=config.NUM_WORKERS,
             pin_memory=config.PIN_MEMORY,
             shuffle=False
