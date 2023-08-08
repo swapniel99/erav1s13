@@ -45,11 +45,13 @@ class Model(LightningModule):
 
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=config.LEARNING_RATE, weight_decay=config.WEIGHT_DECAY)
-        best_lr = find_lr(self, self.train_dataloader(), optimizer, self.criterion)
+        train_loader = self.train_dataloader()
+        best_lr = find_lr(self, train_loader, optimizer, self.criterion, self.device)
+        garbage_collection_cuda()
         scheduler = optim.lr_scheduler.OneCycleLR(
             optimizer,
             max_lr=best_lr,
-            steps_per_epoch=len(self.train_dataloader()),
+            steps_per_epoch=len(train_loader),
             epochs=config.NUM_EPOCHS,
             pct_start=5/config.NUM_EPOCHS,
             div_factor=100,
