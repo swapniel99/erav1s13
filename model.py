@@ -1,15 +1,142 @@
 import torch
 from pytorch_lightning import LightningModule
 from yolov3 import YOLOv3
+from dataset import YOLODataset
+from loss import YoloLoss
+from torch import optim
+from torch.utils.data import DataLoader
+
+import config
+from utils import find_lr, ResizeDataLoader
 
 
 class Model(LightningModule):
     def __init__(self, in_channels=3, num_classes=20):
         super(Model, self).__init__()
         self.network = YOLOv3(in_channels, num_classes)
+        self.scaled_anchors = (
+                torch.tensor(config.ANCHORS)
+                * torch.tensor(config.S).unsqueeze(1).unsqueeze(1).repeat(1, 3, 2)
+        )
+        self.criterion = YoloLoss(self.scaled_anchors)
+        self.batch_size = config.BATCH_SIZE
 
     def forward(self, x):
         return self.network(x)
+
+    def backward(self, loss, *a, **k):
+        super().backward(loss *a, **k)
+
+    def common_step(self, batch, mode):
+        x, y = batch
+        out = self.forward(x)
+        loss = self.criterion(out, y)
+
+        mean_loss = sum(loss) / len(loss)
+
+        self.log(f"{mode}_loss", loss, on_epoch=True, prog_bar=True, logger=True)
+        self.log(f"{mode}_mean_loss", mean_loss, on_epoch=True, prog_bar=True, logger=True)
+
+        return loss
+
+    def training_step(self, batch, batch_idx):
+        return self.common_step(batch, 'train')
+
+    def validation_step(self, batch, batch_idx):
+        return self.common_step(batch, 'val')
+
+    def predict_step(self, batch, batch_idx, dataloader_idx=0):
+        if isinstance(batch, list):
+            x, _ = batch
+        else:
+            x = batch
+        return self.forward(x)
+
+    def configure_optimizers(self):
+        optimizer = optim.Adam(self.parameters(), lr=config.LEARNING_RATE, weight_decay=config.WEIGHT_DECAY)
+        best_lr = find_lr(self, self.train_dataloader(), optimizer, self.criterion)
+        scheduler = optim.lr_scheduler.OneCycleLR(
+            optimizer,
+            max_lr=best_lr,
+            steps_per_epoch=len(self.train_dataloader()),
+            epochs=config.NUM_EPOCHS,
+            pct_start=5/config.NUM_EPOCHS,
+            div_factor=100,
+            three_phase=False,
+            final_div_factor=100,
+            anneal_strategy='linear'
+        )
+        return {
+            'optimizer': optimizer,
+            'lr_scheduler': {
+                "scheduler": scheduler,
+                "interval": "step",
+            }
+        }
+
+    def train_dataloader(self):
+        train_dataset = YOLODataset(
+            config.DATASET + '/train.csv',
+            transform=config.train_transforms,
+            img_dir=config.IMG_DIR,
+            label_dir=config.LABEL_DIR,
+            anchors=config.ANCHORS,
+            mosaic=0.75
+        )
+
+        train_loader = ResizeDataLoader(
+            dataset=train_dataset,
+            batch_size=self.batch_size,
+            num_workers=config.NUM_WORKERS,
+            pin_memory=config.PIN_MEMORY,
+            shuffle=True,
+            resolutions=config.MULTIRES,
+            cum_weights=config.CUM_PROBS
+        )
+
+        return train_loader
+
+    def test_dataloader(self):
+        test_dataset = YOLODataset(
+            config.DATASET + '/test.csv',
+            transform=config.test_transforms,
+            img_dir=config.IMG_DIR,
+            label_dir=config.LABEL_DIR,
+            anchors=config.ANCHORS,
+            mosaic=0
+        )
+
+        test_loader = DataLoader(
+            dataset=test_dataset,
+            batch_size=config.BATCH_SIZE,
+            num_workers=config.NUM_WORKERS,
+            pin_memory=config.PIN_MEMORY,
+            shuffle=False,
+        )
+        return test_loader
+
+    def val_dataloader(self):
+        train_eval_dataset = YOLODataset(
+            config.DATASET + '/train.csv',
+            transform=config.test_transforms,
+            img_dir=config.IMG_DIR,
+            label_dir=config.LABEL_DIR,
+            anchors=config.ANCHORS,
+            mosaic=0
+        )
+
+        train_eval_loader = DataLoader(
+            dataset=train_eval_dataset,
+            batch_size=config.BATCH_SIZE,
+            num_workers=config.NUM_WORKERS,
+            pin_memory=config.PIN_MEMORY,
+            shuffle=False
+        )
+
+        return train_eval_loader
+
+    def predict_dataloader(self):
+        return self.test_dataloader()
 
 
 def main():

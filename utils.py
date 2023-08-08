@@ -5,7 +5,7 @@ import numpy as np
 import torch
 import random
 from torchvision.transforms import Resize
-
+from torch_lr_finder import LRFinder
 from collections import Counter
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -476,68 +476,68 @@ class ResizeDataLoader(DataLoader):
             yield x, y
 
 
-def get_loaders(train_csv_path, test_csv_path):
-    from dataset import YOLODataset
-
-    IMAGE_SIZE = config.IMAGE_SIZE
-
-    train_dataset = YOLODataset(
-        train_csv_path,
-        transform=config.train_transforms,
-        S=[IMAGE_SIZE // 32, IMAGE_SIZE // 16, IMAGE_SIZE // 8],
-        img_dir=config.IMG_DIR,
-        label_dir=config.LABEL_DIR,
-        anchors=config.ANCHORS,
-        mosaic=0.75
-    )
-
-    test_dataset = YOLODataset(
-        test_csv_path,
-        transform=config.test_transforms,
-        S=[IMAGE_SIZE // 32, IMAGE_SIZE // 16, IMAGE_SIZE // 8],
-        img_dir=config.IMG_DIR,
-        label_dir=config.LABEL_DIR,
-        anchors=config.ANCHORS,
-        mosaic=0
-    )
-
-    train_loader = ResizeDataLoader(
-        dataset=train_dataset,
-        batch_size=config.BATCH_SIZE,
-        num_workers=config.NUM_WORKERS,
-        pin_memory=config.PIN_MEMORY,
-        shuffle=True,
-        resolutions=config.MULTIRES,
-        cum_weights=config.CUM_PROBS
-    )
-
-    test_loader = DataLoader(
-        dataset=test_dataset,
-        batch_size=config.BATCH_SIZE,
-        num_workers=config.NUM_WORKERS,
-        pin_memory=config.PIN_MEMORY,
-        shuffle=False,
-    )
-
-    train_eval_dataset = YOLODataset(
-        train_csv_path,
-        transform=config.test_transforms,
-        S=[IMAGE_SIZE // 32, IMAGE_SIZE // 16, IMAGE_SIZE // 8],
-        img_dir=config.IMG_DIR,
-        label_dir=config.LABEL_DIR,
-        anchors=config.ANCHORS,
-        mosaic=0
-    )
-
-    train_eval_loader = DataLoader(
-        dataset=train_eval_dataset,
-        batch_size=config.BATCH_SIZE,
-        num_workers=config.NUM_WORKERS,
-        pin_memory=config.PIN_MEMORY,
-        shuffle=False
-    )
-
-    return train_loader, test_loader, train_eval_loader
+# def get_loaders():
+#     from dataset import YOLODataset
+#
+#     IMAGE_SIZE = config.IMAGE_SIZE
+#
+#     train_dataset = YOLODataset(
+#         config.DATASET + '/train.csv',
+#         transform=config.train_transforms,
+#         S=[IMAGE_SIZE // 32, IMAGE_SIZE // 16, IMAGE_SIZE // 8],
+#         img_dir=config.IMG_DIR,
+#         label_dir=config.LABEL_DIR,
+#         anchors=config.ANCHORS,
+#         mosaic=0.75
+#     )
+#
+#     test_dataset = YOLODataset(
+#         config.DATASET + '/test.csv',
+#         transform=config.test_transforms,
+#         S=[IMAGE_SIZE // 32, IMAGE_SIZE // 16, IMAGE_SIZE // 8],
+#         img_dir=config.IMG_DIR,
+#         label_dir=config.LABEL_DIR,
+#         anchors=config.ANCHORS,
+#         mosaic=0
+#     )
+#
+#     train_loader = ResizeDataLoader(
+#         dataset=train_dataset,
+#         batch_size=config.BATCH_SIZE,
+#         num_workers=config.NUM_WORKERS,
+#         pin_memory=config.PIN_MEMORY,
+#         shuffle=True,
+#         resolutions=config.MULTIRES,
+#         cum_weights=config.CUM_PROBS
+#     )
+#
+#     test_loader = DataLoader(
+#         dataset=test_dataset,
+#         batch_size=config.BATCH_SIZE,
+#         num_workers=config.NUM_WORKERS,
+#         pin_memory=config.PIN_MEMORY,
+#         shuffle=False,
+#     )
+#
+#     train_eval_dataset = YOLODataset(
+#         config.DATASET + '/train.csv',
+#         transform=config.test_transforms,
+#         S=[IMAGE_SIZE // 32, IMAGE_SIZE // 16, IMAGE_SIZE // 8],
+#         img_dir=config.IMG_DIR,
+#         label_dir=config.LABEL_DIR,
+#         anchors=config.ANCHORS,
+#         mosaic=0
+#     )
+#
+#     train_eval_loader = DataLoader(
+#         dataset=train_eval_dataset,
+#         batch_size=config.BATCH_SIZE,
+#         num_workers=config.NUM_WORKERS,
+#         pin_memory=config.PIN_MEMORY,
+#         shuffle=False
+#     )
+#
+#     return train_loader, test_loader, train_eval_loader
 
 
 def plot_couple_examples(model, loader, thresh, iou_thresh, anchors):
@@ -613,3 +613,11 @@ def clip_boxes(boxes, shape):
     else:  # np.array (faster grouped)
         boxes[..., [0, 2]] = boxes[..., [0, 2]].clip(0, shape[1])  # x1, x2
         boxes[..., [1, 3]] = boxes[..., [1, 3]].clip(0, shape[0])  # y1, y2
+
+
+def find_lr(model, data_loader, optimizer, criterion):
+    lr_finder = LRFinder(model, optimizer, criterion)
+    lr_finder.range_test(data_loader, end_lr=0.1, num_iter=100, step_mode='exp')
+    _, best_lr = lr_finder.plot()
+    lr_finder.reset()
+    return best_lr

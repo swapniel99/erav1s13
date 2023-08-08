@@ -7,7 +7,7 @@ import numpy as np
 import os
 import pandas as pd
 import torch
-from utils import xywhn2xyxy, xyxy2xywhn, show_transform, ResizeDataLoader
+from utils import ResizeDataLoader, show_transform
 import random
 import itertools
 
@@ -18,7 +18,9 @@ from utils import (
     cells_to_bboxes,
     iou_width_height as iou,
     non_max_suppression as nms,
-    plot_image
+    plot_image,
+    xywhn2xyxy,
+    xyxy2xywhn
 )
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -33,7 +35,6 @@ class YOLODataset(Dataset):
         anchors,
         image_size=config.IMAGE_SIZE,
         S=config.S,
-        C=config.NUM_CLASSES,
         transform=None,
         mosaic=0.75,
         targets=True
@@ -49,7 +50,6 @@ class YOLODataset(Dataset):
         self.anchors = torch.tensor(anchors[0] + anchors[1] + anchors[2])  # for all 3 scales
         self.num_anchors = self.anchors.shape[0]
         self.num_anchors_per_scale = self.num_anchors // 3
-        self.C = C
         self.ignore_iou_thresh = 0.5
 
     def __len__(self):
