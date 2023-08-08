@@ -26,7 +26,6 @@ class YoloLossSingle(LightningModule):
 
     def calculate(self, predictions, target, anchors):
         predictions, target, anchors = predictions.to(self.device), target.to(self.device), anchors.to(self.device)
-        print(predictions.device, target.device, anchors.device)
         # Check where obj and noobj (we ignore if target == -1)
         obj = target[..., 0] == 1  # in paper this is Iobj_i
         noobj = target[..., 0] == 0  # in paper this is Inoobj_i
@@ -80,7 +79,7 @@ class YoloLossSingle(LightningModule):
 class YoloLoss(LightningModule):
     def __init__(self, scaled_anchors):
         super(YoloLoss, self).__init__()
-        self.scaled_anchors = scaled_anchors.to(self.device)
+        self.scaled_anchors = scaled_anchors
         self.yolo_single = YoloLossSingle()
 
     def forward(self, predictions, target):
