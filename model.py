@@ -59,7 +59,7 @@ class Model(LightningModule):
             max_lr=self.learning_rate,
             steps_per_epoch=len(self.train_dataloader()),
             epochs=self.num_epochs,
-            pct_start=5/self.num_epochs,
+            pct_start=0.2,
             div_factor=100,
             three_phase=False,
             final_div_factor=100,
