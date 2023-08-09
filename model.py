@@ -97,7 +97,7 @@ class Model(LightningModule):
 
     def val_dataloader(self):
         train_eval_dataset = YOLODataset(
-            config.DATASET + '/train.csv',
+            config.DATASET + '/test.csv',
             transform=config.test_transforms,
             img_dir=config.IMG_DIR,
             label_dir=config.LABEL_DIR,
@@ -116,23 +116,7 @@ class Model(LightningModule):
         return train_eval_loader
 
     def predict_dataloader(self):
-        test_dataset = YOLODataset(
-            config.DATASET + '/test.csv',
-            transform=config.test_transforms,
-            img_dir=config.IMG_DIR,
-            label_dir=config.LABEL_DIR,
-            anchors=config.ANCHORS,
-            mosaic=0
-        )
-
-        test_loader = DataLoader(
-            dataset=test_dataset,
-            batch_size=self.batch_size,
-            num_workers=config.NUM_WORKERS,
-            pin_memory=config.PIN_MEMORY,
-            shuffle=False,
-        )
-        return test_loader
+        return self.val_dataloader()
 
     def on_train_batch_end(self, outputs, batch, batch_idx):
         if self.enable_gc == 'batch':
