@@ -301,7 +301,7 @@ def get_evaluation_bboxes(
         device="cuda",
 ):
     # make sure model is in eval before get bboxes
-    model.eval()
+    # model.eval()
     train_idx = 0
     all_pred_boxes = []
     all_true_boxes = []
@@ -344,7 +344,7 @@ def get_evaluation_bboxes(
 
             train_idx += 1
 
-    model.train()
+    # model.train()
     return all_pred_boxes, all_true_boxes
 
 
@@ -389,7 +389,7 @@ def cells_to_bboxes(predictions, anchors, S, is_preds=True):
 
 
 def check_class_accuracy(model, loader, threshold):
-    model.eval()
+    # model.eval()
     tot_class_preds, correct_class = 0, 0
     tot_noobj, correct_noobj = 0, 0
     tot_obj, correct_obj = 0, 0
@@ -418,7 +418,7 @@ def check_class_accuracy(model, loader, threshold):
     print(f"Class accuracy is: {(correct_class / (tot_class_preds + 1e-16)) * 100:2f}%")
     print(f"No obj accuracy is: {(correct_noobj / (tot_noobj + 1e-16)) * 100:2f}%")
     print(f"Obj accuracy is: {(correct_obj / (tot_obj + 1e-16)) * 100:2f}%")
-    model.train()
+    # model.train()
 
 
 def get_mean_std(loader):
@@ -542,7 +542,7 @@ def get_loaders():
 
 
 def plot_couple_examples(model, loader, thresh, iou_thresh, anchors):
-    model.eval()
+    # model.eval()
     x, y = next(iter(loader))
     x = x.to("cuda")
     with torch.no_grad():
@@ -557,7 +557,7 @@ def plot_couple_examples(model, loader, thresh, iou_thresh, anchors):
             for idx, (box) in enumerate(boxes_scale_i):
                 bboxes[idx] += box
 
-        model.train()
+        # model.train()
 
     for i in range(batch_size // 4):
         nms_boxes = non_max_suppression(
