@@ -462,18 +462,17 @@ class ResizeDataLoader(DataLoader):
         super(ResizeDataLoader, self).__init__(dataset, **kwargs)
         self.resolutions = resolutions
         self.cum_weights = cum_weights
-        if self.resolutions is not None:
+        self.resizers = None
+        if (self.resolutions is not None and self.cum_weights is not None and len(resolutions) > 1
+                and len(self.resolutions) == len(self.cum_weights)):
             self.resizers = [Resize(res, antialias=True) for res in self.resolutions]
 
     def __iter__(self):
         gen = super(ResizeDataLoader, self).__iter__()
         for x, y in gen:
-            if self.resolutions is not None and self.cum_weights is not None \
-                    and len(self.resolutions) == len(self.cum_weights):
+            if self.resizers is not None and len(self.resizers) > 1:
                 resizer = random.choices(self.resizers, cum_weights=self.cum_weights, k=1)[0]
                 x = resizer(x)
-            else:
-                print("Warning: Resize parameters not defined properly in ResizeDataLoader")
             yield x, y
 
 
