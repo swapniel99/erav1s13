@@ -33,9 +33,7 @@ class YoloLossSingle(LightningModule):
         #   FOR NO OBJECT LOSS    #
         # ======================= #
 
-        no_object_loss = self.bce(
-            (predictions[..., 0:1][noobj]), (target[..., 0:1][noobj]),
-        )
+        no_object_loss = self.bce(predictions[..., 0:1][noobj], target[..., 0:1][noobj])
 
         # ==================== #
         #   FOR OBJECT LOSS    #
@@ -51,18 +49,14 @@ class YoloLossSingle(LightningModule):
         # ======================== #
 
         predictions[..., 1:3] = self.sigmoid(predictions[..., 1:3])  # x,y coordinates
-        target[..., 3:5] = torch.log(
-            (1e-16 + target[..., 3:5] / anchors)
-        )  # width, height coordinates
+        target[..., 3:5] = torch.log(1e-16 + target[..., 3:5] / anchors)  # width, height coordinates
         box_loss = self.mse(predictions[..., 1:5][obj], target[..., 1:5][obj])
 
         # ================== #
         #   FOR CLASS LOSS   #
         # ================== #
 
-        class_loss = self.entropy(
-            (predictions[..., 5:][obj]), (target[..., 5][obj].long()),
-        )
+        class_loss = self.entropy(predictions[..., 5:][obj], target[..., 5][obj].long())
 
         return (
             self.lambda_box * box_loss

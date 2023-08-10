@@ -59,7 +59,7 @@ class Model(LightningModule):
             max_lr=self.learning_rate,
             steps_per_epoch=len(self.train_dataloader()),
             epochs=self.num_epochs,
-            pct_start=0.2,
+            pct_start=0.4,
             div_factor=100,
             three_phase=False,
             final_div_factor=100,
@@ -80,7 +80,7 @@ class Model(LightningModule):
             img_dir=config.IMG_DIR,
             label_dir=config.LABEL_DIR,
             anchors=config.ANCHORS,
-            mosaic=0.75
+            mosaic=0.5
         )
 
         train_loader = ResizeDataLoader(
@@ -96,7 +96,7 @@ class Model(LightningModule):
         return train_loader
 
     def val_dataloader(self):
-        train_eval_dataset = YOLODataset(
+        test_dataset = YOLODataset(
             config.DATASET + '/test.csv',
             transform=config.test_transforms,
             img_dir=config.IMG_DIR,
@@ -105,15 +105,15 @@ class Model(LightningModule):
             mosaic=0
         )
 
-        train_eval_loader = DataLoader(
-            dataset=train_eval_dataset,
+        test_loader = DataLoader(
+            dataset=test_dataset,
             batch_size=self.batch_size,
             num_workers=config.NUM_WORKERS,
             pin_memory=config.PIN_MEMORY,
             shuffle=False
         )
 
-        return train_eval_loader
+        return test_loader
 
     def predict_dataloader(self):
         return self.val_dataloader()

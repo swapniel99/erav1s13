@@ -188,7 +188,7 @@ def test():
             for j in range(batch_size):
                 boxes[j] += i_boxes[j]
         for i in range(batch_size):
-            nms_boxes = nms(boxes[i], iou_threshold=1, threshold=0.7, box_format="midpoint")
+            nms_boxes = nms(boxes[i], iou_threshold=1, threshold=0.99, box_format="midpoint")
             plot_image(show_transform(x[i]).to("cpu"), nms_boxes)
 
 

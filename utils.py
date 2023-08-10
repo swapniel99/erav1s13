@@ -388,25 +388,19 @@ def cells_to_bboxes(predictions, anchors, S, is_preds=True):
     return converted_bboxes.tolist()
 
 
-def check_class_accuracy(model, loader, threshold):
-    model.eval()
+def check_class_accuracy(loader, results, threshold, device=config.DEVICE):
     tot_class_preds, correct_class = 0, 0
     tot_noobj, correct_noobj = 0, 0
     tot_obj, correct_obj = 0, 0
 
-    for idx, (x, y) in enumerate(tqdm(loader)):
-        x = x.to(config.DEVICE)
-        with torch.no_grad():
-            out = model(x)
-
+    for (_, y), out in zip(tqdm(loader), results):
         for i in range(3):
-            y[i] = y[i].to(config.DEVICE)
+            out[i] = out[i].to(device)
+            y[i] = y[i].to(device)
             obj = y[i][..., 0] == 1  # in paper this is Iobj_i
             noobj = y[i][..., 0] == 0  # in paper this is Iobj_i
 
-            correct_class += torch.sum(
-                torch.argmax(out[i][..., 5:][obj], dim=-1) == y[i][..., 5][obj]
-            )
+            correct_class += torch.sum(torch.argmax(out[i][..., 5:][obj], dim=-1) == y[i][..., 5][obj])
             tot_class_preds += torch.sum(obj)
 
             obj_preds = torch.sigmoid(out[i][..., 0]) > threshold
@@ -418,7 +412,6 @@ def check_class_accuracy(model, loader, threshold):
     print(f"Class accuracy is: {(correct_class / (tot_class_preds + 1e-16)) * 100:2f}%")
     print(f"No obj accuracy is: {(correct_noobj / (tot_noobj + 1e-16)) * 100:2f}%")
     print(f"Obj accuracy is: {(correct_obj / (tot_obj + 1e-16)) * 100:2f}%")
-    model.train()
 
 
 def get_mean_std(loader):
