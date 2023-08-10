@@ -175,21 +175,21 @@ def test():
         transform=transform,
     )
     scaled_anchors = config.SCALED_ANCHORS
-    loader = ResizeDataLoader(dataset=dataset, batch_size=2, shuffle=True, resolutions=config.MULTIRES,
+    loader = ResizeDataLoader(dataset=dataset, batch_size=32, shuffle=True, resolutions=config.MULTIRES,
                               cum_weights=config.CUM_PROBS)
-    for x, y in itertools.islice(loader, 10):
-        boxes = []
-        # print(type(y), len(y), y[0].shape, y[1].shape, y[2].shape)
-        for i in range(y[0].shape[1]):
+    for x, y in itertools.islice(loader, 1):
+        batch_size = x.shape[0]
+        boxes = [list() for _ in range(batch_size)]
+        for i in range(3):
             anchor = scaled_anchors[i]
-            # print(anchor.shape)
-            # print(y[i].shape)
-            boxes += cells_to_bboxes(
+            i_boxes = cells_to_bboxes(
                 y[i], is_preds=False, S=y[i].shape[2], anchors=anchor
-            )[0]
-        boxes = nms(boxes, iou_threshold=1, threshold=0.7, box_format="midpoint")
-        # print(type(boxes), len(boxes))
-        plot_image(show_transform(x[0]).to("cpu"), boxes)
+            )
+            for j in range(batch_size):
+                boxes[j] += i_boxes[j]
+        for i in range(batch_size):
+            nms_boxes = nms(boxes[i], iou_threshold=1, threshold=0.7, box_format="midpoint")
+            plot_image(show_transform(x[i]).to("cpu"), nms_boxes)
 
 
 if __name__ == "__main__":
