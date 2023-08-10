@@ -167,13 +167,13 @@ def test():
     transform = config.train_transforms
 
     dataset = YOLODataset(
-        "PASCAL_VOC/train.csv",
-        "PASCAL_VOC/images/",
-        "PASCAL_VOC/labels/",
-        S=[13, 26, 52],
+        config.DATASET + '/train.csv',
+        img_dir=config.IMG_DIR,
+        label_dir=config.LABEL_DIR,
         anchors=anchors,
-        transform=transform,
+        transform=transform
     )
+
     scaled_anchors = config.SCALED_ANCHORS
     loader = ResizeDataLoader(dataset=dataset, batch_size=32, shuffle=True, resolutions=config.MULTIRES,
                               cum_weights=config.CUM_PROBS)
