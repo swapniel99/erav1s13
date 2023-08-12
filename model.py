@@ -5,6 +5,7 @@ from yolov3 import YOLOv3
 from dataset import YOLODataset
 from loss import YoloLoss
 from torch import optim
+from torchmetrics import MeanMetric
 from torch.utils.data import DataLoader
 
 import config
@@ -21,26 +22,29 @@ class Model(LightningModule):
         self.learning_rate = learning_rate
         self.enable_gc = enable_gc
         self.num_epochs = num_epochs
+        self.my_train_loss = MeanMetric()
+        self.my_val_loss = MeanMetric()
 
         self.register_buffer("scaled_anchors", config.SCALED_ANCHORS)
 
     def forward(self, x):
         return self.network(x)
 
-    def common_step(self, batch):
+    def common_step(self, batch, metric):
         x, y = batch
         out = self.forward(x)
         loss = self.criterion(out, y, self.scaled_anchors)
+        metric.update(loss, x.shape[0])
         del x, y, out
         return loss
 
     def training_step(self, batch, batch_idx):
-        loss = self.common_step(batch)
+        loss = self.common_step(batch, self.my_train_loss)
         self.log(f"train_loss", loss, on_epoch=True, prog_bar=True, logger=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
-        loss = self.common_step(batch)
+        loss = self.common_step(batch, self.my_val_loss)
         self.log(f"val_loss", loss, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
         return loss
 
@@ -132,10 +136,14 @@ class Model(LightningModule):
     def on_train_epoch_end(self):
         if self.enable_gc == 'epoch':
             garbage_collection_cuda()
+        print("Train Loss: ", self.my_train_loss.compute())
+        self.my_train_loss.reset()
 
     def on_validation_epoch_end(self):
         if self.enable_gc == 'epoch':
             garbage_collection_cuda()
+        print("Val Loss: ", self.my_val_loss.compute())
+        self.my_val_loss.reset()
 
     def on_predict_epoch_end(self):
         if self.enable_gc == 'epoch':
