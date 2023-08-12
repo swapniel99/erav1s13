@@ -133,6 +133,14 @@ class Model(LightningModule):
         if self.enable_gc == 'epoch':
             garbage_collection_cuda()
 
+    def on_validation_epoch_end(self):
+        if self.enable_gc == 'epoch':
+            garbage_collection_cuda()
+
+    def on_predict_epoch_end(self):
+        if self.enable_gc == 'epoch':
+            garbage_collection_cuda()
+
 
 def main():
     num_classes = 20
