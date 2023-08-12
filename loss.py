@@ -69,12 +69,13 @@ class YoloLossSingle(nn.Module):
 
 
 class YoloLoss(nn.Module):
-    def __init__(self, lambda_noobj=10, lambda_box=10):
+    def __init__(self, scaled_anchors, lambda_noobj=10, lambda_box=10):
         super(YoloLoss, self).__init__()
         self.yolo_single = YoloLossSingle(lambda_noobj, lambda_box)
+        self.register_buffer("scaled_anchors", scaled_anchors)
 
-    def forward(self, predictions, target, scaled_anchors):
+    def forward(self, predictions, target):
         combined_loss = 0
         for i in range(len(target)):
-            combined_loss += self.yolo_single(predictions[i], target[i], scaled_anchors[i])
+            combined_loss += self.yolo_single(predictions[i], target[i], self.scaled_anchors[i])
         return combined_loss

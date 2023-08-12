@@ -17,7 +17,7 @@ class Model(LightningModule):
                  num_epochs=config.NUM_EPOCHS, enable_gc='batch', dws=False, lambda_noobj=5, lambda_box=10):
         super(Model, self).__init__()
         self.network = YOLOv3(in_channels, config.NUM_CLASSES, dws=dws)
-        self.criterion = YoloLoss(lambda_noobj=lambda_noobj, lambda_box=lambda_box)
+        self.criterion = YoloLoss(config.SCALED_ANCHORS, lambda_noobj=lambda_noobj, lambda_box=lambda_box)
         self.batch_size = batch_size
         self.learning_rate = learning_rate
         self.enable_gc = enable_gc
@@ -25,15 +25,13 @@ class Model(LightningModule):
         self.my_train_loss = MeanMetric()
         self.my_val_loss = MeanMetric()
 
-        self.register_buffer("scaled_anchors", config.SCALED_ANCHORS)
-
     def forward(self, x):
         return self.network(x)
 
     def common_step(self, batch, metric):
         x, y = batch
         out = self.forward(x)
-        loss = self.criterion(out, y, self.scaled_anchors)
+        loss = self.criterion(out, y)
         metric.update(loss, x.shape[0])
         del x, y, out
         return loss
@@ -153,7 +151,7 @@ class Model(LightningModule):
 def main():
     num_classes = 20
     IMAGE_SIZE = 416
-    INPUT_SIZE = IMAGE_SIZE * 2
+    INPUT_SIZE = IMAGE_SIZE  # * 2
     model = Model()
     from torchinfo import summary
     print(summary(model, input_size=(2, 3, INPUT_SIZE, INPUT_SIZE)))
