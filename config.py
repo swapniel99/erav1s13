@@ -31,13 +31,13 @@ def get_device():
 
 DATASET = 'PASCAL_VOC'
 DEVICE = get_device()
-ACTIVATION = 'relu'
+ACTIVATION = 'lrelu'
 seed_everything()  # If you want deterministic behavior
 NUM_WORKERS = min(os.cpu_count(), 4)
-BATCH_SIZE = 32
+BATCH_SIZE = 8
 IMAGE_SIZE = 416
-MULTIRES = [416]
-CUM_PROBS = [100]
+MULTIRES = [416, 832]
+CUM_PROBS = [95, 100]
 MAX_IMAGE_SIZE = MULTIRES[-1]
 NUM_CLASSES = 20
 LEARNING_RATE = 3e-4
@@ -81,7 +81,7 @@ train_transforms = A.Compose(
             border_mode=cv2.BORDER_CONSTANT,
             value=0
         ),
-        # A.Rotate(limit=10),
+        A.Rotate(limit=10),
         A.RandomCrop(width=MAX_IMAGE_SIZE, height=MAX_IMAGE_SIZE),
         A.ColorJitter(brightness=0.6, contrast=0.6, saturation=0.6, hue=0.6, p=0.4),
         A.ShiftScaleRotate(rotate_limit=20, p=1.0, border_mode=cv2.BORDER_CONSTANT, value=0),

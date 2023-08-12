@@ -120,10 +120,11 @@ class ScalePrediction(nn.Module):
 
 
 class YOLOv3(nn.Module):
-    def __init__(self, in_channels=3, num_classes=80):
+    def __init__(self, in_channels=3, num_classes=80, dws=False):
         super(YOLOv3, self).__init__()
-        self.num_classes = num_classes
         self.in_channels = in_channels
+        self.num_classes = num_classes
+        self.dws = dws
         self.layers = self._create_conv_layers()
 
     def forward(self, x):
@@ -165,7 +166,7 @@ class YOLOv3(nn.Module):
 
             elif isinstance(module, list):
                 num_repeats = module[1]
-                layers.append(ResidualBlock(in_channels, num_repeats=num_repeats, dws=True))
+                layers.append(ResidualBlock(in_channels, num_repeats=num_repeats, dws=self.dws))
 
             elif isinstance(module, str):
                 if module == "S":
