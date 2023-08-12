@@ -41,7 +41,7 @@ class Model(LightningModule):
 
     def validation_step(self, batch, batch_idx):
         loss = self.common_step(batch)
-        self.log(f"val_loss", loss, on_epoch=True, prog_bar=True, logger=True)
+        self.log(f"val_loss", loss, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
         return loss
 
     def predict_step(self, batch, batch_idx, dataloader_idx=0):
@@ -151,3 +151,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    from pytorch_lightning import Trainer
