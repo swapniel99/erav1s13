@@ -12,18 +12,16 @@ from utils import ResizeDataLoader
 
 
 class Model(LightningModule):
-    def __init__(self, in_channels=3, num_classes=config.NUM_CLASSES, batch_size=config.BATCH_SIZE,
-                 learning_rate=config.LEARNING_RATE, enable_gc='batch', num_epochs=config.NUM_EPOCHS,
-                 dws=False):
+    def __init__(self, in_channels=3, batch_size=config.BATCH_SIZE, learning_rate=config.LEARNING_RATE,
+                 num_epochs=config.NUM_EPOCHS, enable_gc='batch', dws=False, lambda_noobj=5, lambda_box=10):
         super(Model, self).__init__()
-        self.network = YOLOv3(in_channels, num_classes, dws=dws)
-        self.criterion = YoloLoss()
+        self.network = YOLOv3(in_channels, config.NUM_CLASSES, dws=dws)
+        self.criterion = YoloLoss(lambda_noobj=lambda_noobj, lambda_box=lambda_box)
         self.batch_size = batch_size
         self.learning_rate = learning_rate
         self.enable_gc = enable_gc
         self.num_epochs = num_epochs
 
-        # self.scaled_anchors = config.SCALED_ANCHORS
         self.register_buffer("scaled_anchors", config.SCALED_ANCHORS)
 
     def forward(self, x):
@@ -33,7 +31,7 @@ class Model(LightningModule):
         x, y = batch
         out = self.forward(x)
         loss = self.criterion(out, y, self.scaled_anchors)
-        del out, x, y
+        del x, y, out
         return loss
 
     def training_step(self, batch, batch_idx):
@@ -81,7 +79,7 @@ class Model(LightningModule):
             img_dir=config.IMG_DIR,
             label_dir=config.LABEL_DIR,
             anchors=config.ANCHORS,
-            mosaic=0.75
+            mosaic=0.5
         )
 
         train_loader = ResizeDataLoader(
@@ -140,7 +138,7 @@ def main():
     num_classes = 20
     IMAGE_SIZE = 416
     INPUT_SIZE = IMAGE_SIZE * 2
-    model = Model(num_classes=num_classes)
+    model = Model()
     from torchinfo import summary
     print(summary(model, input_size=(2, 3, INPUT_SIZE, INPUT_SIZE)))
     inp = torch.randn((2, 3, INPUT_SIZE, INPUT_SIZE))

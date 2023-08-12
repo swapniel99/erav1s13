@@ -36,7 +36,7 @@ class YOLODataset(Dataset):
         image_size=config.IMAGE_SIZE,
         S=config.S,
         transform=None,
-        mosaic=0.75,
+        mosaic=0.5,
         targets=True
     ):
         self.annotations = pd.read_csv(csv_file)

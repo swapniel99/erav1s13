@@ -10,7 +10,7 @@ from utils import intersection_over_union
 
 
 class YoloLossSingle(nn.Module):
-    def __init__(self):
+    def __init__(self, lambda_noobj=10, lambda_box=10):
         super(YoloLossSingle, self).__init__()
         self.mse = nn.MSELoss()
         self.bce = nn.BCEWithLogitsLoss()
@@ -19,9 +19,9 @@ class YoloLossSingle(nn.Module):
 
         # Constants signifying how much to pay for each respective part of the loss
         self.lambda_class = 1
-        self.lambda_noobj = 5  # 10
+        self.lambda_noobj = lambda_noobj
         self.lambda_obj = 1
-        self.lambda_box = 5  # 10
+        self.lambda_box = lambda_box
 
     def calculate(self, predictions, target, anchors):
         # Check where obj and noobj (we ignore if target == -1)
@@ -69,9 +69,9 @@ class YoloLossSingle(nn.Module):
 
 
 class YoloLoss(nn.Module):
-    def __init__(self):
+    def __init__(self, lambda_noobj=10, lambda_box=10):
         super(YoloLoss, self).__init__()
-        self.yolo_single = YoloLossSingle()
+        self.yolo_single = YoloLossSingle(lambda_noobj, lambda_box)
 
     def forward(self, predictions, target, scaled_anchors):
         combined_loss = 0
