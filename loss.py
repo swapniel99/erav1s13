@@ -23,7 +23,7 @@ class YoloLossSingle(nn.Module):
         self.lambda_obj = 1
         self.lambda_box = lambda_box
 
-    def calculate(self, predictions, target, anchors):
+    def forward(self, predictions, target, anchors):
         # Check where obj and noobj (we ignore if target == -1)
         obj = target[..., 0] == 1  # in paper this is Iobj_i
         noobj = target[..., 0] == 0  # in paper this is Inoobj_i
@@ -63,9 +63,6 @@ class YoloLossSingle(nn.Module):
             + self.lambda_noobj * no_object_loss
             + self.lambda_class * class_loss
         )
-
-    def forward(self, predictions, target, anchors):
-        return self.calculate(predictions, target, anchors)
 
 
 class YoloLoss(nn.Module):
