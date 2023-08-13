@@ -15,7 +15,7 @@ from utils import ResizeDataLoader
 class Model(LightningModule):
     def __init__(self, in_channels=3, batch_size=config.BATCH_SIZE, learning_rate=config.LEARNING_RATE,
                  num_epochs=config.NUM_EPOCHS, enable_gc='batch', dws=False, lambda_noobj=5, lambda_box=10,
-                 print_step=False):
+                 print_step=False, print_batch=False):
         super(Model, self).__init__()
         self.network = YOLOv3(in_channels, config.NUM_CLASSES, dws=dws)
         self.criterion = YoloLoss(config.SCALED_ANCHORS, lambda_noobj=lambda_noobj, lambda_box=lambda_box)
@@ -24,6 +24,7 @@ class Model(LightningModule):
         self.enable_gc = enable_gc
         self.num_epochs = num_epochs
         self.print_step = print_step
+        self.print_batch = print_batch
         self.my_train_loss = MeanMetric()
         self.my_val_loss = MeanMetric()
         self.save_hyperparameters()
@@ -130,6 +131,8 @@ class Model(LightningModule):
     def on_train_batch_end(self, outputs, batch, batch_idx):
         if self.enable_gc == 'batch':
             garbage_collection_cuda()
+        if self.print_batch:
+            print(f"Global Step: {self.global_step}, Current LRs: {self.get_current_lrs()}")
 
     def on_validation_batch_end(self, outputs, batch, batch_idx, dataloader_idx=0):
         if self.enable_gc == 'batch':
