@@ -19,18 +19,20 @@ def seed_everything(seed=42):
 
 
 def get_device():
+    device_count = 1
     if torch.cuda.is_available():
         device = "cuda"
+        device_count = torch.cuda.device_count()
     elif torch.backends.mps.is_available():
         device = "mps"
     else:
         device = "cpu"
-    print("Device Selected:", device)
-    return device
+    print(f"Devices Found: {device_count} x {device}")
+    return device, device_count
 
 
 DATASET = 'PASCAL_VOC'
-DEVICE = get_device()
+DEVICE, DEVICE_COUNT = get_device()
 ACTIVATION = 'lrelu'
 seed_everything()  # If you want deterministic behavior
 NUM_WORKERS = min(os.cpu_count(), 4)

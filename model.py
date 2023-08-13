@@ -15,7 +15,7 @@ from utils import ResizeDataLoader
 class Model(LightningModule):
     def __init__(self, in_channels=3, batch_size=config.BATCH_SIZE, learning_rate=config.LEARNING_RATE,
                  num_epochs=config.NUM_EPOCHS, enable_gc='batch', dws=False, lambda_noobj=5, lambda_box=10,
-                 print_step=False, print_batch=False):
+                 print_step=False, print_batch=False, device_count=config.DEVICE_COUNT):
         super(Model, self).__init__()
         self.network = YOLOv3(in_channels, config.NUM_CLASSES, dws=dws)
         self.criterion = YoloLoss(config.SCALED_ANCHORS, lambda_noobj=lambda_noobj, lambda_box=lambda_box)
@@ -25,6 +25,7 @@ class Model(LightningModule):
         self.num_epochs = num_epochs
         self.print_step = print_step
         self.print_batch = print_batch
+        self.device_count = device_count
         self.my_train_loss = MeanMetric()
         self.my_val_loss = MeanMetric()
         self.save_hyperparameters()
@@ -63,11 +64,14 @@ class Model(LightningModule):
         return self.forward(x)
 
     def configure_optimizers(self):
-        optimizer = optim.SGD(self.parameters(), lr=self.learning_rate/100, momentum=0.9)
+        # Effective LR and batch size are different in DDP
+        effective_lr = self.learning_rate * self.device_count
+
+        optimizer = optim.SGD(self.parameters(), lr=effective_lr/100, momentum=0.9)
         scheduler = optim.lr_scheduler.OneCycleLR(
             optimizer,
-            max_lr=self.learning_rate,
-            steps_per_epoch=len(self.train_dataloader()),
+            max_lr=effective_lr,
+            steps_per_epoch=len(self.train_dataloader()) // self.device_count,
             epochs=self.num_epochs,
             pct_start=0.2,
             div_factor=100,
