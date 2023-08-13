@@ -42,13 +42,12 @@ class Model(LightningModule):
 
     def training_step(self, batch, batch_idx):
         loss = self.common_step(batch, self.my_train_loss)
-        print(f"GLobal Step: {self.global_step}, Current LRs: {self.get_current_lrs()}")
+        print(f"Global Step: {self.global_step}, Current LRs: {self.get_current_lrs()}, self.lr: {self.learning_rate}")
         self.log(f"train_loss", loss, on_epoch=True, prog_bar=True, logger=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
         loss = self.common_step(batch, self.my_val_loss)
-        print(f"GLobal Step: {self.global_step}, Current LRs: {self.get_current_lrs()}")
         self.log(f"val_loss", loss, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
         return loss
 
@@ -141,14 +140,16 @@ class Model(LightningModule):
         if self.enable_gc == 'epoch':
             garbage_collection_cuda()
         print(f"Epoch: {self.current_epoch}, Global Steps: {self.global_step}, "
-              f"Train Loss: {self.my_train_loss.compute()}, LR: {self.get_current_lrs()}")
+              f"Train Loss: {self.my_train_loss.compute()}, LR: {self.get_current_lrs()}, "
+              f"self.lr: {self.learning_rate}")
         self.my_train_loss.reset()
 
     def on_validation_epoch_end(self):
         if self.enable_gc == 'epoch':
             garbage_collection_cuda()
         print(f"Epoch: {self.current_epoch}, Global Steps: {self.global_step}, "
-              f"Val Loss: {self.my_val_loss.compute()}, LR: {self.get_current_lrs()}")
+              f"Val Loss: {self.my_val_loss.compute()}, LR: {self.get_current_lrs()},"
+              f"self.lr: {self.learning_rate}")
         self.my_val_loss.reset()
 
     def on_predict_epoch_end(self):
