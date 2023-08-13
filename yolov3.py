@@ -52,7 +52,7 @@ class CNNBlock(nn.Module):
         elif atype == 'relu':
             return nn.ReLU()
 
-    def __init__(self, in_channels, out_channels, kernel_size, padding=0, stride=1, act=cfgfile.ACTIVATION, bn_act=True,
+    def __init__(self, in_channels, out_channels, kernel_size, padding=0, stride=1, act='lrelu', bn_act=True,
                  dws=False):
         super(CNNBlock, self).__init__()
 
@@ -81,14 +81,14 @@ class CNNBlock(nn.Module):
 
 
 class ResidualBlock(nn.Module):
-    def __init__(self, channels, use_residual=True, num_repeats=1, dws=False):
+    def __init__(self, channels, use_residual=True, num_repeats=1, dws=False, act='lrelu'):
         super(ResidualBlock, self).__init__()
         self.layers = nn.ModuleList()
         for repeat in range(num_repeats):
             self.layers += [
                 nn.Sequential(
-                    CNNBlock(channels, channels // 2, 1),
-                    CNNBlock(channels // 2, channels, 3, padding=1, dws=dws),
+                    CNNBlock(channels, channels // 2, 1, act=act),
+                    CNNBlock(channels // 2, channels, 3, padding=1, dws=dws, act=act),
                 )
             ]
         self.use_residual = use_residual
@@ -104,11 +104,11 @@ class ResidualBlock(nn.Module):
 
 
 class ScalePrediction(nn.Module):
-    def __init__(self, in_channels, num_classes, rep):
+    def __init__(self, in_channels, num_classes, rep, act='lrelu'):
         super(ScalePrediction, self).__init__()
         self.pred = nn.Sequential(
-            CNNBlock(in_channels, 2 * in_channels, 3, padding=1),
-            CNNBlock(2 * in_channels, (num_classes + 5) * 3, 1, bn_act=False),
+            CNNBlock(in_channels, 2 * in_channels, 3, padding=1, act=act),
+            CNNBlock(2 * in_channels, (num_classes + 5) * 3, 1, bn_act=False, act=act),
             nn.AdaptiveAvgPool2d(cfgfile.S[rep])
         )
         self.num_classes = num_classes
@@ -120,11 +120,12 @@ class ScalePrediction(nn.Module):
 
 
 class YOLOv3(nn.Module):
-    def __init__(self, in_channels=3, num_classes=80, dws=False):
+    def __init__(self, in_channels=3, num_classes=80, dws=False, act='lrelu'):
         super(YOLOv3, self).__init__()
         self.in_channels = in_channels
         self.num_classes = num_classes
         self.dws = dws
+        self.act = act
         self.layers = self._create_conv_layers()
 
     def forward(self, x):
@@ -160,20 +161,21 @@ class YOLOv3(nn.Module):
                         kernel_size,
                         stride=stride,
                         padding=1 if kernel_size == 3 else 0,
+                        act=self.act
                     )
                 )
                 in_channels = out_channels
 
             elif isinstance(module, list):
                 num_repeats = module[1]
-                layers.append(ResidualBlock(in_channels, num_repeats=num_repeats, dws=self.dws))
+                layers.append(ResidualBlock(in_channels, num_repeats=num_repeats, dws=self.dws, act=self.act))
 
             elif isinstance(module, str):
                 if module == "S":
                     layers += [
-                        ResidualBlock(in_channels, use_residual=False, num_repeats=1),
-                        CNNBlock(in_channels, in_channels // 2, 1),
-                        ScalePrediction(in_channels // 2, num_classes=self.num_classes, rep=sp_rep),
+                        ResidualBlock(in_channels, use_residual=False, num_repeats=1, act=self.act),
+                        CNNBlock(in_channels, in_channels // 2, 1, act=self.act),
+                        ScalePrediction(in_channels // 2, num_classes=self.num_classes, rep=sp_rep, act=self.act),
                     ]
                     sp_rep += 1
                     in_channels = in_channels // 2

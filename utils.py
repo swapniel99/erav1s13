@@ -339,8 +339,7 @@ def get_evaluation_bboxes(
                 all_pred_boxes.append([train_idx] + nms_box)
 
             for box in true_bboxes[idx]:
-                if box[1] > threshold:
-                    all_true_boxes.append([train_idx] + box)
+                all_true_boxes.append([train_idx] + box)
 
             train_idx += 1
 
@@ -436,27 +435,6 @@ def get_mean_std(loader):
     return mean, std
 
 
-def save_checkpoint(model, optimizer, filename="my_checkpoint.pth.tar"):
-    print("=> Saving checkpoint")
-    checkpoint = {
-        "state_dict": model.state_dict(),
-        "optimizer": optimizer.state_dict(),
-    }
-    torch.save(checkpoint, filename)
-
-
-def load_checkpoint(checkpoint_file, model, optimizer, lr):
-    print("=> Loading checkpoint")
-    checkpoint = torch.load(checkpoint_file, map_location=config.DEVICE)
-    model.load_state_dict(checkpoint["state_dict"])
-    optimizer.load_state_dict(checkpoint["optimizer"])
-
-    # If we don't do this then it will just have learning rate of old checkpoint
-    # and it will lead to many hours of debugging \:
-    for param_group in optimizer.param_groups:
-        param_group["lr"] = lr
-
-
 class ResizeDataLoader(DataLoader):
     def __init__(self, dataset, resolutions=None, cum_weights=None, **kwargs):
         super(ResizeDataLoader, self).__init__(dataset, **kwargs)
@@ -475,70 +453,6 @@ class ResizeDataLoader(DataLoader):
                 if resizer.size != x.shape[2]:
                     x = resizer(x)
             yield x, y
-
-
-def get_loaders():
-    from dataset import YOLODataset
-
-    IMAGE_SIZE = config.IMAGE_SIZE
-
-    train_dataset = YOLODataset(
-        config.DATASET + '/train.csv',
-        transform=config.train_transforms,
-        S=[IMAGE_SIZE // 32, IMAGE_SIZE // 16, IMAGE_SIZE // 8],
-        img_dir=config.IMG_DIR,
-        label_dir=config.LABEL_DIR,
-        anchors=config.ANCHORS,
-        mosaic=0.75
-    )
-
-    test_dataset = YOLODataset(
-        config.DATASET + '/test.csv',
-        transform=config.test_transforms,
-        S=[IMAGE_SIZE // 32, IMAGE_SIZE // 16, IMAGE_SIZE // 8],
-        img_dir=config.IMG_DIR,
-        label_dir=config.LABEL_DIR,
-        anchors=config.ANCHORS,
-        mosaic=0
-    )
-
-    train_loader = ResizeDataLoader(
-        dataset=train_dataset,
-        batch_size=config.BATCH_SIZE,
-        num_workers=config.NUM_WORKERS,
-        pin_memory=config.PIN_MEMORY,
-        shuffle=True,
-        resolutions=config.MULTIRES,
-        cum_weights=config.CUM_PROBS
-    )
-
-    test_loader = DataLoader(
-        dataset=test_dataset,
-        batch_size=config.BATCH_SIZE,
-        num_workers=config.NUM_WORKERS,
-        pin_memory=config.PIN_MEMORY,
-        shuffle=False,
-    )
-
-    train_eval_dataset = YOLODataset(
-        config.DATASET + '/train.csv',
-        transform=config.test_transforms,
-        S=[IMAGE_SIZE // 32, IMAGE_SIZE // 16, IMAGE_SIZE // 8],
-        img_dir=config.IMG_DIR,
-        label_dir=config.LABEL_DIR,
-        anchors=config.ANCHORS,
-        mosaic=0
-    )
-
-    train_eval_loader = DataLoader(
-        dataset=train_eval_dataset,
-        batch_size=config.BATCH_SIZE,
-        num_workers=config.NUM_WORKERS,
-        pin_memory=config.PIN_MEMORY,
-        shuffle=False
-    )
-
-    return train_loader, test_loader, train_eval_loader
 
 
 def plot_couple_examples(model, loader, thresh, iou_thresh, anchors):
@@ -614,12 +528,3 @@ def clip_boxes(boxes, shape):
     else:  # np.array (faster grouped)
         boxes[..., [0, 2]] = boxes[..., [0, 2]].clip(0, shape[1])  # x1, x2
         boxes[..., [1, 3]] = boxes[..., [1, 3]].clip(0, shape[0])  # y1, y2
-
-
-def find_lr(model, data_loader, optimizer, criterion, device=config.DEVICE):
-    from torch_lr_finder import LRFinder
-    lr_finder = LRFinder(model, optimizer, criterion, device=device)
-    lr_finder.range_test(data_loader, end_lr=0.1, num_iter=100, step_mode='exp')
-    _, best_lr = lr_finder.plot()
-    lr_finder.reset()
-    return best_lr

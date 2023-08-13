@@ -14,10 +14,10 @@ from utils import ResizeDataLoader
 
 class Model(LightningModule):
     def __init__(self, in_channels=3, batch_size=config.BATCH_SIZE, learning_rate=config.LEARNING_RATE,
-                 num_epochs=config.NUM_EPOCHS, enable_gc='batch', dws=False, lambda_noobj=5, lambda_box=10,
-                 print_step=False, print_batch=False, device_count=config.DEVICE_COUNT):
+                 num_epochs=config.NUM_EPOCHS, enable_gc='batch', dws=False, act=config.ACTIVATION, lambda_noobj=5,
+                 lambda_box=10, print_step=False, print_batch=False, device_count=config.DEVICE_COUNT):
         super(Model, self).__init__()
-        self.network = YOLOv3(in_channels, config.NUM_CLASSES, dws=dws)
+        self.network = YOLOv3(in_channels, config.NUM_CLASSES, dws=dws, act=act)
         self.criterion = YoloLoss(config.SCALED_ANCHORS, lambda_noobj=lambda_noobj, lambda_box=lambda_box)
         self.batch_size = batch_size
         self.learning_rate = learning_rate
