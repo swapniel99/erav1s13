@@ -14,7 +14,8 @@ from utils import ResizeDataLoader
 
 class Model(LightningModule):
     def __init__(self, in_channels=3, batch_size=config.BATCH_SIZE, learning_rate=config.LEARNING_RATE,
-                 num_epochs=config.NUM_EPOCHS, enable_gc='batch', dws=False, lambda_noobj=5, lambda_box=10):
+                 num_epochs=config.NUM_EPOCHS, enable_gc='batch', dws=False, lambda_noobj=5, lambda_box=10,
+                 print_step=False):
         super(Model, self).__init__()
         self.network = YOLOv3(in_channels, config.NUM_CLASSES, dws=dws)
         self.criterion = YoloLoss(config.SCALED_ANCHORS, lambda_noobj=lambda_noobj, lambda_box=lambda_box)
@@ -22,6 +23,7 @@ class Model(LightningModule):
         self.learning_rate = learning_rate
         self.enable_gc = enable_gc
         self.num_epochs = num_epochs
+        self.print_step = print_step
         self.my_train_loss = MeanMetric()
         self.my_val_loss = MeanMetric()
         self.save_hyperparameters()
@@ -42,7 +44,8 @@ class Model(LightningModule):
 
     def training_step(self, batch, batch_idx):
         loss = self.common_step(batch, self.my_train_loss)
-        print(f"Global Step: {self.global_step}, Current LRs: {self.get_current_lrs()}")
+        if self.print_step:
+            print(f"Global Step: {self.global_step}, Current LRs: {self.get_current_lrs()}, Loss: {loss}")
         self.log(f"train_loss", loss, on_epoch=True, prog_bar=True, logger=True)
         return loss
 
