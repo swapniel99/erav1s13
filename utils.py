@@ -468,7 +468,7 @@ class ResizeDataLoader(DataLoader):
             self.resizers = [Resize(res, antialias=True) for res in self.resolutions]
 
     def __iter__(self):
-        gen = iter(super(ResizeDataLoader, self))
+        gen = super(ResizeDataLoader, self).__iter__()
         for x, y in gen:
             if self.resizers is not None:
                 resizer = random.choices(self.resizers, cum_weights=self.cum_weights, k=1)[0]
