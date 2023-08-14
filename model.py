@@ -42,7 +42,10 @@ class Model(LightningModule):
         return loss
 
     def get_current_lrs(self):
-        return ', '.join(str(param_group['lr']) for param_group in self.optimizers().optimizer.param_groups)
+        try:
+            return ', '.join(str(param_group['lr']) for param_group in self.optimizers().optimizer.param_groups)
+        except AttributeError:
+            return 'Not Available'
 
     def training_step(self, batch, batch_idx):
         loss = self.common_step(batch, self.my_train_loss)
