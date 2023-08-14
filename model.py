@@ -46,7 +46,7 @@ class Model(LightningModule):
 
     def training_step(self, batch, batch_idx):
         loss = self.common_step(batch, self.my_train_loss)
-        if self.print_step and self.global_rank == 0:
+        if self.print_step:
             print(f"Global Step: {self.global_step}, Current LRs: {self.get_current_lrs()}, Loss: {loss}")
         self.log(f"train_loss", loss, on_epoch=True, prog_bar=True, logger=True)
         return loss
@@ -135,7 +135,7 @@ class Model(LightningModule):
     def on_train_batch_end(self, outputs, batch, batch_idx):
         if self.enable_gc == 'batch':
             garbage_collection_cuda()
-        if self.print_batch and self.global_rank == 0:
+        if self.print_batch:
             print(f"Global Step: {self.global_step}, Current LRs: {self.get_current_lrs()}")
 
     def on_validation_batch_end(self, outputs, batch, batch_idx, dataloader_idx=0):
@@ -149,17 +149,19 @@ class Model(LightningModule):
     def on_train_epoch_end(self):
         if self.enable_gc == 'epoch':
             garbage_collection_cuda()
-        if self.global_rank == 0:
-            print(f"Epoch: {self.current_epoch}, Global Steps: {self.global_step}, "
-                  f"Train Loss: {self.my_train_loss.compute()}, LR: {self.get_current_lrs()}")
+        # if self.global_rank == 0:
+        print(f"Epoch: {self.current_epoch}, Global Steps: {self.global_step}, "
+              f"Train Loss: {self.my_train_loss.compute()}, LR: {self.get_current_lrs()}, "
+              f"Global rank: {repr(self.global_rank)}")
         self.my_train_loss.reset()
 
     def on_validation_epoch_end(self):
         if self.enable_gc == 'epoch':
             garbage_collection_cuda()
-        if self.global_rank:
-            print(f"Epoch: {self.current_epoch}, Global Steps: {self.global_step}, "
-                  f"Val Loss: {self.my_val_loss.compute()}, LR: {self.get_current_lrs()}")
+        # if self.global_rank:
+        print(f"Epoch: {self.current_epoch}, Global Steps: {self.global_step}, "
+              f"Val Loss: {self.my_val_loss.compute()}, LR: {self.get_current_lrs()}, "
+              f"Global rank: {repr(self.global_rank)}")
         self.my_val_loss.reset()
 
     def on_predict_epoch_end(self):
