@@ -18,7 +18,7 @@ class Model(LightningModule):
         super(Model, self).__init__()
         self.network = YOLOv3(in_channels, config.NUM_CLASSES, dws=dws, act=act)
         self.anchors = config.ANCHORS  # python
-        self.criterion = YoloLoss(self.anchors, lambda_class=1, lambda_noobj=1, lambda_obj=1, lambda_box=1)
+        self.criterion = YoloLoss(self.anchors, lambda_class=1, lambda_noobj=1, lambda_obj=1, lambda_box=5)
         self.batch_size = batch_size
         self.learning_rate = learning_rate
         self.enable_gc = enable_gc
