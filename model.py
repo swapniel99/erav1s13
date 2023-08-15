@@ -9,23 +9,23 @@ from torchmetrics import MeanMetric
 from torch.utils.data import DataLoader
 
 import config
-from utils import ResizeDataLoader
 
 
 class Model(LightningModule):
     def __init__(self, in_channels=3, batch_size=config.BATCH_SIZE, learning_rate=config.LEARNING_RATE,
-                 num_epochs=config.NUM_EPOCHS, enable_gc='batch', dws=False, act=config.ACTIVATION, lambda_noobj=5,
-                 lambda_box=10, print_step=False, print_batch=False, device_count=config.DEVICE_COUNT):
+                 num_epochs=config.NUM_EPOCHS, act=config.ACTIVATION, print_step=False, print_batch=False,
+                 enable_gc='batch', dws=False):
         super(Model, self).__init__()
         self.network = YOLOv3(in_channels, config.NUM_CLASSES, dws=dws, act=act)
-        self.criterion = YoloLoss(config.SCALED_ANCHORS, lambda_noobj=lambda_noobj, lambda_box=lambda_box)
+        self.anchors = config.ANCHORS  # python
+        self.criterion = YoloLoss(self.anchors, lambda_class=1, lambda_noobj=1, lambda_obj=1, lambda_box=1)
         self.batch_size = batch_size
         self.learning_rate = learning_rate
         self.enable_gc = enable_gc
         self.num_epochs = num_epochs
         self.print_step = print_step
         self.print_batch = print_batch
-        self.device_count = device_count
+        self.device_count = config.DEVICE_COUNT
         self.my_train_loss = MeanMetric()
         self.my_val_loss = MeanMetric()
         self.save_hyperparameters()
@@ -96,41 +96,43 @@ class Model(LightningModule):
             transform=config.train_transforms,
             img_dir=config.IMG_DIR,
             label_dir=config.LABEL_DIR,
-            anchors=config.ANCHORS,
+            anchors=self.anchors,
+            multires=True,
             mosaic=0.5
         )
 
-        train_loader = ResizeDataLoader(
+        train_loader = DataLoader(
             dataset=train_dataset,
             batch_size=self.batch_size,
             num_workers=config.NUM_WORKERS,
             pin_memory=config.PIN_MEMORY,
             shuffle=True,
-            resolutions=config.MULTIRES,
-            cum_weights=config.CUM_PROBS
+            collate_fn=train_dataset.collate_function
         )
 
         return train_loader
 
     def val_dataloader(self):
-        train_eval_dataset = YOLODataset(
+        val_dataset = YOLODataset(
             config.DATASET + '/test.csv',
             transform=config.test_transforms,
             img_dir=config.IMG_DIR,
             label_dir=config.LABEL_DIR,
-            anchors=config.ANCHORS,
+            anchors=self.anchors,
+            multires=False,
             mosaic=0
         )
 
-        train_eval_loader = DataLoader(
-            dataset=train_eval_dataset,
+        val_loader = DataLoader(
+            dataset=val_dataset,
             batch_size=self.batch_size,
             num_workers=config.NUM_WORKERS,
             pin_memory=config.PIN_MEMORY,
-            shuffle=False
+            shuffle=False,
+            collate_fn=val_dataset.collate_function
         )
 
-        return train_eval_loader
+        return val_loader
 
     def predict_dataloader(self):
         return self.val_dataloader()

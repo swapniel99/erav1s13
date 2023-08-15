@@ -7,15 +7,15 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
 
-def seed_everything(seed=42):
+def seed_everything(seed=42, cuda=False):
     os.environ['PYTHONHASHSEED'] = str(seed)
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    # torch.backends.cudnn.deterministic = True
-    # torch.backends.cudnn.benchmark = False
+    if cuda:
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
 
 
 def get_device():
@@ -34,24 +34,20 @@ def get_device():
 DATASET = 'PASCAL_VOC'
 DEVICE, DEVICE_COUNT = get_device()
 ACTIVATION = 'lrelu'
-seed_everything()  # If you want deterministic behavior
-NUM_WORKERS = min(os.cpu_count(), 4)
+seed_everything(42, DEVICE == 'cuda')  # If you want deterministic behavior
+NUM_WORKERS = min(os.cpu_count() - 1, 4)
 BATCH_SIZE = 8
 IMAGE_SIZE = 416
-MULTIRES = [416, 832]
-CUM_PROBS = [95, 100]
-MAX_IMAGE_SIZE = MULTIRES[-1]
+SCALES = [7, 11, 13, 15, 19, 26]
+CUM_PROBS = [5, 10, 85, 90, 95, 100]
+MAX_IMAGE_SIZE = 32 * SCALES[-1]
 NUM_CLASSES = 20
 LEARNING_RATE = 1e-4
-# WEIGHT_DECAY = 1e-4
 NUM_EPOCHS = 40
 CONF_THRESHOLD = 0.5
 MAP_IOU_THRESH = 0.5
-NMS_IOU_THRESH = 0.5
-S = [IMAGE_SIZE // 32, IMAGE_SIZE // 16, IMAGE_SIZE // 8]
+NMS_IOU_THRESH = 0.45
 PIN_MEMORY = True
-LOAD_MODEL = False
-SAVE_MODEL = True
 CHECKPOINT_FILE = "checkpoint.pth.tar"
 IMG_DIR = DATASET + "/images/"
 LABEL_DIR = DATASET + "/labels/"
@@ -61,10 +57,6 @@ ANCHORS = [
     [(0.07, 0.15), (0.15, 0.11), (0.14, 0.29)],
     [(0.02, 0.03), (0.04, 0.07), (0.08, 0.06)],
 ]  # Note these have been rescaled to be between [0, 1]
-
-SCALED_ANCHORS = (
-    torch.tensor(ANCHORS) * torch.tensor(S).unsqueeze(1).unsqueeze(1).repeat(1, 3, 2)
-)
 
 mean = [0.485, 0.456, 0.406]
 std = [0.229, 0.224, 0.225]

@@ -10,7 +10,7 @@ from utils import intersection_over_union
 
 
 class YoloLossSingle(nn.Module):
-    def __init__(self, lambda_noobj=10, lambda_box=10):
+    def __init__(self, lambda_class=1, lambda_noobj=10, lambda_obj=1, lambda_box=10):
         super(YoloLossSingle, self).__init__()
         self.mse = nn.MSELoss()
         self.bce = nn.BCEWithLogitsLoss()
@@ -18,9 +18,9 @@ class YoloLossSingle(nn.Module):
         self.sigmoid = nn.Sigmoid()
 
         # Constants signifying how much to pay for each respective part of the loss
-        self.lambda_class = 1
+        self.lambda_class = lambda_class
         self.lambda_noobj = lambda_noobj
-        self.lambda_obj = 1
+        self.lambda_obj = lambda_obj
         self.lambda_box = lambda_box
 
     def forward(self, predictions, target, anchors):
@@ -66,13 +66,14 @@ class YoloLossSingle(nn.Module):
 
 
 class YoloLoss(nn.Module):
-    def __init__(self, scaled_anchors, lambda_noobj=10, lambda_box=10):
+    def __init__(self, anchors, **kwargs):
         super(YoloLoss, self).__init__()
-        self.yolo_single = YoloLossSingle(lambda_noobj, lambda_box)
-        self.register_buffer("scaled_anchors", scaled_anchors)
+        self.yolo_single = YoloLossSingle(**kwargs)
+        self.register_buffer("anchors", torch.tensor(anchors))
 
     def forward(self, predictions, target):
         combined_loss = 0
         for i in range(len(target)):
-            combined_loss += self.yolo_single(predictions[i], target[i], self.scaled_anchors[i])
+            scaled_anchors = self.anchors[i] * predictions[i].shape[2]
+            combined_loss += self.yolo_single(predictions[i], target[i], scaled_anchors)
         return combined_loss

@@ -5,8 +5,6 @@ Implementation of YOLOv3 architecture
 import torch
 import torch.nn as nn
 
-import config as cfgfile
-
 """ 
 Information about architecture config:
 Tuple is structured by (filters, kernel_size, stride) 
@@ -108,8 +106,7 @@ class ScalePrediction(nn.Module):
         super(ScalePrediction, self).__init__()
         self.pred = nn.Sequential(
             CNNBlock(in_channels, 2 * in_channels, 3, padding=1, act=act),
-            CNNBlock(2 * in_channels, (num_classes + 5) * 3, 1, bn_act=False, act=act),
-            nn.AdaptiveAvgPool2d(cfgfile.S[rep])
+            CNNBlock(2 * in_channels, (num_classes + 5) * 3, 1, bn_act=False, act=act)
         )
         self.num_classes = num_classes
         self.rep = rep

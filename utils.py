@@ -3,10 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
 import torch
-import random
-from torchvision.transforms import Resize
 from collections import Counter
-from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 
@@ -433,26 +430,6 @@ def get_mean_std(loader):
     std = (channels_sqrd_sum / num_batches - mean ** 2) ** 0.5
 
     return mean, std
-
-
-class ResizeDataLoader(DataLoader):
-    def __init__(self, dataset, resolutions=None, cum_weights=None, **kwargs):
-        super(ResizeDataLoader, self).__init__(dataset, **kwargs)
-        self.resolutions = resolutions
-        self.cum_weights = cum_weights
-        self.resizers = None
-        if self.resolutions is not None and self.cum_weights is not None \
-                and len(self.resolutions) == len(self.cum_weights):
-            self.resizers = [Resize(res, antialias=True) for res in self.resolutions]
-
-    def __iter__(self):
-        gen = super(ResizeDataLoader, self).__iter__()
-        for x, y in gen:
-            if self.resizers is not None:
-                resizer = random.choices(self.resizers, cum_weights=self.cum_weights, k=1)[0]
-                if resizer.size != x.shape[2]:
-                    x = resizer(x)
-            yield x, y
 
 
 def plot_couple_examples(model, loader, thresh, iou_thresh, anchors):
