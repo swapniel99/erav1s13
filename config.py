@@ -35,7 +35,7 @@ DATASET = 'PASCAL_VOC'
 DEVICE, DEVICE_COUNT = get_device()
 ACTIVATION = 'lrelu'
 seed_everything(42, DEVICE == 'cuda')  # If you want deterministic behavior
-NUM_WORKERS = min(os.cpu_count() - 1, 4)
+NUM_WORKERS = os.cpu_count() + 1
 BATCH_SIZE = 8
 IMAGE_SIZE = 416
 SCALES = [7, 11, 13, 15, 19, 26]
