@@ -14,11 +14,12 @@ import config
 class Model(LightningModule):
     def __init__(self, in_channels=3, batch_size=config.BATCH_SIZE, learning_rate=config.LEARNING_RATE,
                  num_epochs=config.NUM_EPOCHS, act=config.ACTIVATION, print_step=False, print_batch=False,
-                 enable_gc='batch', dws=False):
+                 enable_gc='batch', dws=False, lambda_class=1, lambda_noobj=5, lambda_obj=1, lambda_box=5):
         super(Model, self).__init__()
         self.network = YOLOv3(in_channels, config.NUM_CLASSES, dws=dws, act=act)
         self.anchors = config.ANCHORS  # python
-        self.criterion = YoloLoss(self.anchors, lambda_class=1, lambda_noobj=5, lambda_obj=1, lambda_box=5)
+        self.criterion = YoloLoss(self.anchors, lambda_class=lambda_class, lambda_noobj=lambda_noobj,
+                                  lambda_obj=lambda_obj, lambda_box=lambda_box)
         self.batch_size = batch_size
         self.learning_rate = learning_rate
         self.enable_gc = enable_gc
