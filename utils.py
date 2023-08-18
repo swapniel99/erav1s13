@@ -337,6 +337,7 @@ def get_evaluation_bboxes(
 
             for nms_box in nms_boxes:
                 all_pred_boxes.append([train_idx] + nms_box)
+            del nms_boxes
 
             for box in true_bboxes[idx]:
                 all_true_boxes.append([train_idx] + box)
@@ -344,6 +345,7 @@ def get_evaluation_bboxes(
             train_idx += 1
             if device == 'cuda':
                 torch.cuda.empty_cache()
+        del bboxes, true_bboxes
 
     model.train()
     return all_pred_boxes, all_true_boxes
