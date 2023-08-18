@@ -319,10 +319,13 @@ def get_evaluation_bboxes(
             for idx, (box) in enumerate(boxes_scale_i):
                 bboxes[idx] += box
 
+        del x, predictions
+
         # we just want one bbox for each label, not one for each scale
         true_bboxes = cells_to_bboxes(
             labels[2], anchor, S=S, is_preds=False
         )
+        del labels
 
         for idx in range(batch_size):
             nms_boxes = non_max_suppression(
@@ -339,6 +342,8 @@ def get_evaluation_bboxes(
                 all_true_boxes.append([train_idx] + box)
 
             train_idx += 1
+            if device == 'cuda':
+                torch.cuda.empty_cache()
 
     model.train()
     return all_pred_boxes, all_true_boxes
