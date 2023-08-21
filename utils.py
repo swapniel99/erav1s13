@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from collections import Counter
 from tqdm import tqdm
+import gc
 
 
 def iou_width_height(boxes1, boxes2):
@@ -298,10 +299,11 @@ def get_evaluation_bboxes(
         device="cuda",
 ):
     # make sure model is in eval before get bboxes
+    model = model.to(device)
     model.eval()
     train_idx = 0
-    all_pred_boxes = []
-    all_true_boxes = []
+    all_pred_boxes = list()
+    all_true_boxes = list()
     for batch_idx, (x, labels) in enumerate(tqdm(loader)):
         x = x.to(device)
 
@@ -343,9 +345,11 @@ def get_evaluation_bboxes(
                 all_true_boxes.append([train_idx] + box)
 
             train_idx += 1
-            if device == 'cuda':
-                torch.cuda.empty_cache()
+
         del bboxes, true_bboxes
+        gc.collect()
+        if device == 'cuda':
+            torch.cuda.empty_cache()
 
     model.train()
     return all_pred_boxes, all_true_boxes
